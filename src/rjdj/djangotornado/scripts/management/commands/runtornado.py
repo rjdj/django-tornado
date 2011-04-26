@@ -31,14 +31,14 @@ class TestHandler(RequestHandler):
 
     def get(self):
         self.set_header("Content-Type", "text/plain;charset=utf-8")
-        self.write("Welcome to Tornado Web Server")
+        self.write("Welcome to Tornado Web Server!")
         self.finish()
 
 
 class Command(BaseCommand):
     option_list = BaseCommand.option_list + (
         make_option('--noreload',action='store_true',
-                    dest='no_reload',default=True,
+                    dest='no_reload', default=False,
                     help='Tell Tornado not to auto-reload.'),
         )
     help = "Starts a single threaded Tornado web server."
