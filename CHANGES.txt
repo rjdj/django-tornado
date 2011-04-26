@@ -1,0 +1,16 @@
+==============================
+CHANGES for rjdj.djangotornado
+==============================
+
+trunk
+-----
+
+  - added --noreload option
+
+  - catch shut down command correctly
+
+
+2011-04-26 0.1.1
+----------------
+
+

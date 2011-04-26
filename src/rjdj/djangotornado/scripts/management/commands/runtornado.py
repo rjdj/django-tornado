@@ -31,12 +31,17 @@ class TestHandler(RequestHandler):
 
     def get(self):
         self.set_header("Content-Type", "text/plain;charset=utf-8")
-        self.write("Tornado Web Server")
+        self.write("Welcome to Tornado Web Server")
+        self.finish()
 
 
 class Command(BaseCommand):
-    option_list = BaseCommand.option_list + ()
-    help = "Starts a Tornado Web."
+    option_list = BaseCommand.option_list + (
+        make_option('--noreload',action='store_true',
+                    dest='no_reload',default=True,
+                    help='Tell Tornado not to auto-reload.'),
+        )
+    help = "Starts a single threaded Tornado web server."
     args = '[optional port number, or ipaddr:port]'
 
     def handle(self, addrport='', *args, **options):
@@ -47,6 +52,7 @@ class Command(BaseCommand):
 
         sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)
         sys.stderr = os.fdopen(sys.stderr.fileno(), 'w', 0)
+
 
         if args:
             raise CommandError('Usage is runserver %s' % self.args)
@@ -67,20 +73,27 @@ class Command(BaseCommand):
         quit_command = (sys.platform == 'win32') and 'CTRL-BREAK' or 'CONTROL-C'
 
         def inner_run():
-            color_print("Validating models...")
-            self.validate(display_num_errors=True)
-            color_print("\nDjango version %s, using settings %r" % (django.get_version(), settings.SETTINGS_MODULE))
-            color_print("Server is running at http://%s:%s/" % (addr,port))
-            color_print("Quit the server with %s." % quit_command)
+            try:
+                color_print("Validating models...")
+                self.validate(display_num_errors=True)
+                color_print("\nDjango version %s, using settings %r" % (django.get_version(), settings.SETTINGS_MODULE))
+                color_print("Server is running at http://%s:%s/" % (addr,port))
+                color_print("Quit the server with %s." % quit_command)
 
-            django_app = wsgi.WSGIContainer(WSGIHandler())
-            tornado_app = Application([
-                (r'/tornado/([^/]+)/', TestHandler),
-                (r'.*', FallbackHandler, dict(fallback=django_app)),
-                ])
-            server = httpserver.HTTPServer(tornado_app)
-            server.listen(int(port), address=addr)
-            ioloop.IOLoop.instance().start()
+                django_app = wsgi.WSGIContainer(WSGIHandler())
+                tornado_app = Application([
+                    (r'/_t/', TestHandler),
+                    (r'.*', FallbackHandler, dict(fallback=django_app)),
+                    ])
+                server = httpserver.HTTPServer(tornado_app)
+                server.listen(int(port), address=addr)
+                ioloop.IOLoop.instance().start()
+            except KeyboardInterrupt:
+                color_print("\nShutting down Tornado ...",color=31)
+                sys.exit(0)
 
-        from django.utils import autoreload
-        autoreload.main(inner_run)
+        if options.get("no_reload",False):
+            inner_run()
+        else:
+            from django.utils import autoreload
+            autoreload.main(inner_run)

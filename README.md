@@ -1,6 +1,18 @@
 Run Tornado Web Server with Django
 ==================================
 
+Acknowledgement
+---------------
+
+This package is based upon ideas and code sinppets from:
+
+  - https://github.com/koblas/django-on-tornado/blob/master/myproject/django_tornado/management/commands/runtornado.py
+
+which is also based on:
+
+  - http://geekscrap.com/2010/02/integrate-tornado-in-django/
+
+
 Installation with Buildout
 --------------------------
 
