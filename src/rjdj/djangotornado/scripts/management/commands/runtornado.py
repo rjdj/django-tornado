@@ -73,20 +73,20 @@ class Command(BaseCommand):
         quit_command = (sys.platform == 'win32') and 'CTRL-BREAK' or 'CONTROL-C'
 
         def inner_run():
-            try:
-                color_print("Validating models...")
-                self.validate(display_num_errors=True)
-                color_print("\nDjango version %s, using settings %r" % (django.get_version(), settings.SETTINGS_MODULE))
-                color_print("Server is running at http://%s:%s/" % (addr,port))
-                color_print("Quit the server with %s." % quit_command)
+            color_print("Validating models...")
+            self.validate(display_num_errors=True)
+            color_print("\nDjango version %s, using settings %r" % (django.get_version(), settings.SETTINGS_MODULE))
+            color_print("Server is running at http://%s:%s/" % (addr,port))
+            color_print("Quit the server with %s." % quit_command)
 
-                django_app = wsgi.WSGIContainer(WSGIHandler())
-                tornado_app = Application([
-                    (r'/_t/', TestHandler),
-                    (r'.*', FallbackHandler, dict(fallback=django_app)),
-                    ])
-                server = httpserver.HTTPServer(tornado_app)
-                server.listen(int(port), address=addr)
+            django_app = wsgi.WSGIContainer(WSGIHandler())
+            tornado_app = Application([
+                (r'/_t/', TestHandler),
+                (r'.*', FallbackHandler, dict(fallback=django_app)),
+                ])
+            server = httpserver.HTTPServer(tornado_app)
+            server.listen(int(port), address=addr)
+            try:
                 ioloop.IOLoop.instance().start()
             except KeyboardInterrupt:
                 color_print("\nShutting down Tornado ...",color=31)
