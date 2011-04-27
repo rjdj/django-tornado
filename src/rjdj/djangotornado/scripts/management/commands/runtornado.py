@@ -27,7 +27,7 @@ def color_print(*args, **kwargs):
     else:
         print text
 
-class TestHandler(RequestHandler):
+class WelcomeHandler(RequestHandler):
 
     def get(self):
         self.set_header("Content-Type", "text/plain;charset=utf-8")
@@ -72,18 +72,30 @@ class Command(BaseCommand):
 
         quit_command = (sys.platform == 'win32') and 'CTRL-BREAK' or 'CONTROL-C'
 
+        ## Create Django and Tornado Handlers
+        django_app = wsgi.WSGIContainer(WSGIHandler())
+        handlers = ()
+        try:
+            urls =  __import__(settings.ROOT_URLCONF,
+                               fromlist=[settings.ROOT_URLCONF])
+            if hasattr(urls,"tornado_urls"):
+                handlers = urls.tornado_urls
+        except ImportError:
+            color_print("No Tornado URL specified.",color=31)
+
+        handlers += (
+            (r'/welcome.html', WelcomeHandler),
+            (r'.*', FallbackHandler, dict(fallback=django_app)),
+            )
+        tornado_app = Application(handlers)
+
         def inner_run():
             color_print("Validating models...")
             self.validate(display_num_errors=True)
             color_print("\nDjango version %s, using settings %r" % (django.get_version(), settings.SETTINGS_MODULE))
             color_print("Server is running at http://%s:%s/" % (addr,port))
             color_print("Quit the server with %s." % quit_command)
-
-            django_app = wsgi.WSGIContainer(WSGIHandler())
-            tornado_app = Application([
-                (r'/_t/', TestHandler),
-                (r'.*', FallbackHandler, dict(fallback=django_app)),
-                ])
+            ## Start IOLoop
             server = httpserver.HTTPServer(tornado_app)
             server.listen(int(port), address=addr)
             try:
