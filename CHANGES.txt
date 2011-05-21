@@ -5,6 +5,22 @@ CHANGES for rjdj.djangotornado
 trunk
 -----
 
+2011-05-21 0.2.1
+----------------
+
+  - support for admin media (development static files)
+
+2011-05-21 0.2.0
+----------------
+
+  - moved /welcome.html handler to /_
+
+  - patched unicode cookie bug
+
+  - refactored command to fit to Django 1.3 pattern
+
+  - removed scripts module and placed content into rjdj.djangotornado
+
   - added --noreload option
 
   - catch shut down command correctly
