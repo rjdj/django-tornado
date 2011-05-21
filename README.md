@@ -18,7 +18,7 @@ Installation with Buildout
 
   - Add "rjdj.djangotornado" to your requirements in setup.py
 
-  - Add "rjdj.djangotornato.scripts" to INSTALLED_APPS in your Django settings.py
+  - Add "rjdj.djangotornado" to INSTALLED_APPS in your Django settings.py
 
   - Make sure you have the "tornado" package in your sys.path
 
