@@ -5,6 +5,11 @@ CHANGES for rjdj.djangotornado
 trunk
 -----
 
+2011-05-23 0.2.2
+----------------
+
+  - do not pass *args and **options into inner_run method
+
 2011-05-21 0.2.1
 ----------------
 

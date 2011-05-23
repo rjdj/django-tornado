@@ -49,8 +49,8 @@ class Command(BaseCommand):
     def handle(self, addrport='', *args, **options):
         """Handle command call"""
 
-        #sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)
-        #sys.stderr = os.fdopen(sys.stderr.fileno(), 'w', 0)
+        sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)
+        sys.stderr = os.fdopen(sys.stderr.fileno(), 'w', 0)
 
         if args:
             raise CommandError('Usage is runserver %s' % self.args)
@@ -69,7 +69,7 @@ class Command(BaseCommand):
             raise CommandError("%r is not a valid port number." % port)
 
         self.quit_command = (sys.platform == 'win32') and 'CTRL-BREAK' or 'CONTROL-C'
-        self.run()
+        self.run(*args, **options)
 
     def admin_media(self):
         """Return path and url of development admin media"""
@@ -110,12 +110,12 @@ class Command(BaseCommand):
     def run(self, *args, **options):
         """Run application either with or without autoreload"""
         if options.get("no_reload",False):
-            self.inner_run(*args, **options)
+            self.inner_run()
         else:
             from django.utils import autoreload
-            autoreload.main(self.inner_run, *args, **options)
+            autoreload.main(self.inner_run)
 
-    def inner_run(self, *args, **options):
+    def inner_run(self):
         """Get handler and start IOLoop"""
         import django
         from django.utils import translation
@@ -141,6 +141,6 @@ class Command(BaseCommand):
         try:
             ioloop.IOLoop.instance().start()
         except KeyboardInterrupt:
-            self.echo("\nShutting down Tornado ...",color=31)
+            self.echo("\nShutting down Tornado ...\n",color=31)
             sys.exit(0)
 
