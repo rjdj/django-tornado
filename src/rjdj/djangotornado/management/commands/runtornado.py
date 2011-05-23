@@ -29,11 +29,6 @@ class WelcomeHandler(RequestHandler):
 
 
 class Command(BaseCommand):
-    option_list = BaseCommand.option_list + (
-        make_option('--noreload',action='store_true',
-                    dest='no_reload', default=False,
-                    help='Tell Tornado not to auto-reload.'),
-        )
     help = "Starts a single threaded Tornado web server."
     args = '[optional port number, or ipaddr:port]'
 
@@ -44,7 +39,7 @@ class Command(BaseCommand):
             color = kwargs.get("color",32)
             self.stdout.write("\033[0;%dm%s\033[0;m" % (color, text))
         else:
-            self.stdout.write(text)
+            print text
 
     def handle(self, addrport='', *args, **options):
         """Handle command call"""
@@ -109,16 +104,11 @@ class Command(BaseCommand):
 
     def run(self, *args, **options):
         """Run application either with or without autoreload"""
-        if options.get("no_reload",False):
-            self.inner_run()
-        else:
-            from django.utils import autoreload
-            autoreload.main(self.inner_run)
+        self.inner_run()
 
     def inner_run(self):
         """Get handler and start IOLoop"""
         import django
-        from django.utils import translation
         from tornado import httpserver, ioloop
 
         self.echo("Validating models...\n")
@@ -132,8 +122,6 @@ class Command(BaseCommand):
                       "port": self.port,
                       "quit_command": self.quit_command,
                       })
-
-        translation.activate(settings.LANGUAGE_CODE)
 
         app = self.get_handler()
         server = httpserver.HTTPServer(app)

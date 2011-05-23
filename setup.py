@@ -2,7 +2,7 @@ import os
 from setuptools import setup, find_packages
 
 setup(name = "rjdj.djangotornado",
-      version = "0.2.2",
+      version = "0.2.3",
       author = 'Reality Jockey Limited',
       author_email = 'developer@rjdj.me',
       description = 'Use Tornado with your Django project.',

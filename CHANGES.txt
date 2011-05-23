@@ -5,6 +5,12 @@ CHANGES for rjdj.djangotornado
 trunk
 -----
 
+2011-05-23 0.2.3
+----------------
+
+  - removed autoreload due to bug in Django 1.3
+    that requires terminal as stdin
+
 2011-05-23 0.2.2
 ----------------
 
