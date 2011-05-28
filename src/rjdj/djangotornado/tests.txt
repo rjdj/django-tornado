@@ -222,11 +222,11 @@ And a content attribute:
 
 As well as a _headers attribute:
 
-    >>> pprint(res._headers)
-    {'content-length': '272',
-     'content-type': 'text/html; charset=UTF-8',
-     'etag': '"..."',
-     'server': 'TornadoServer/1.2.1'}
+    >>> print res._headers
+    [('content-length', '272'),
+     ('content-type', 'text/html; charset=UTF-8'),
+     ('etag', '"..."'),
+     ('server', 'TornadoServer/1.2.1')]
 
 
 So take a look at the POST.

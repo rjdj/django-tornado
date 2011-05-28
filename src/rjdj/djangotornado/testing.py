@@ -23,11 +23,11 @@ class TestResponse(object):
     def __init__(self, status_code=200, content="", headers={}):
         self.status_code = status_code
         self.content = content
-        self._headers = headers
+        self._headers = TestResponseHeaders(headers)
 
     def raw_response(self):
         raw_response = ""
-        for key,value in self._headers.items():
+        for key,value in self._headers.__dict__.items():
             raw_response += "%s: %s\n" % (key.capitalize(),value)
         raw_response += self.content
         return raw_response
@@ -195,4 +195,5 @@ class TestClient(object):
         raise NotImplementedError
 
     def __del__(self):
-        self._server.__del__()
+        if self._server:
+            self._server.__del__()
