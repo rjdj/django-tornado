@@ -35,21 +35,21 @@ class TestResponse(object):
     __str__ = __repr__ = raw_response
 
 
-class TestResponseHeaders():
-    """..."""
+class TestResponseHeaders:
+    """Header representation for the TestResponse"""
 
     def __init__(self, header_dict):
         for k,v in header_dict.items():
             setattr(self, k, v)
 
     def __setitem__(self, key, value):
-        raise AttributeError
+        raise AttributeError("You are not allowed to set headers once they are defined.")
 
     def __getitem__(self, key):
-        return self.__getattr__(self, key)
+        return getattr(self, key)
 
     def __repr__(self):
-        pass
+        return str(sorted(self.__dict__.items(), key=lambda x: x[0]))
 
 
 class TestResponseHandler(urllib2.BaseHandler):

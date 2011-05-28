@@ -184,13 +184,9 @@ We need to provide a set of handlers that are passed to the server instance.
     ...         self.write(str(self.request))
     ...         self.finish()
 
-We have 3 different URLs:
-
     >>> handlers = (
     ...     (r"/", TestHandler),
     ...     (r"/broken", BrokenTestHandler),
-    ...     (r"/get/(\d+)", TestHandler),
-    ...     (r"/post/(\w+)", TestHandler),
     ...     )
 
 Let's test them one by one!
@@ -285,7 +281,157 @@ not yet :(
 
 
 
-TODO (chaudum):
- - Test POST and GET parameters in TestClient
- - Tests for TestResponse and TestResponseHeaders classes
+By now POST and GET parameters have not been tested.
+So purge the current client and create a new one with new url handlers.
+
+    >>> del client
+
+    >>> class ParameterHandler(RequestHandler):
+    ...
+    ...     def output(self,request):
+    ...         self.write("Method: %s\n" % request.method)
+    ...         self.write("Query: %s\n" % request.query)
+    ...         self.write("Body: %s\n" % request.query)
+    ...         self.write("Arguments: %s" % request.arguments)
+    ...
+    ...     def post(self):
+    ...         self.output(self.request)
+    ...         self.finish()
+    ...
+    ...     def get(self):
+    ...         self.output(self.request)
+    ...         self.finish()
+
+    >>> class URLParameterHandler(RequestHandler):
+    ...
+    ...     def get(self, digit, string):
+    ...         self.write("First argument: %s (%s)\n" % (str(digit),type(digit)))
+    ...         self.write("Second argument: %s (%s)\n" % (str(string),type(string)))
+    ...         self.finish()
+
+
+    >>> handlers = (
+    ...     (r"/", ParameterHandler),
+    ...     (r"/foo/(\d+)/([^/]+)", URLParameterHandler),
+    ...     )
+    >>> client = TestClient(handlers)
+
+You can add a dict to the GET method that represents the arguments.
+
+    >>> res = client.get("/",{"foo":"bar"})
+    >>> print res.content
+    Method: GET
+    Query: foo=bar
+    Body: foo=bar
+    Arguments: {'foo': ['bar']}
+
+    >>> res = client.get("/",{"foo":"bar","array":[1,2]})
+    >>> print res.content
+    Method: GET
+    Query: array=%5B1%2C+2%5D&foo=bar
+    Body: array=%5B1%2C+2%5D&foo=bar
+    Arguments: {'array': ['[1, 2]'], 'foo': ['bar']}
+
+Use the same pattern with POST requests:
+
+    >>> res = client.post("/",{"foo":"bar"})
+    >>> print res.content
+    Method: POST
+    Query:
+    Body:
+    Arguments: {'foo': ['bar']}
+
+    >>> res = client.post("/",{"foo":"bar","array":[1,2]})
+    >>> print res.content
+    Method: POST
+    Query:
+    Body:
+    Arguments: {'array': ['[1, 2]'], 'foo': ['bar']}
+
+Let's try a URL that requires arguments within the url!
+
+    >>> res = client.get("/foo/x/y")
+    >>> res
+    Content-length: 69
+    Content-type: text/html; charset=UTF-8
+    Server: TornadoServer/1.2.1
+    <html><title>404: Not Found</title><body>404: Not Found</body></html>
+
+Ooops, that url returns a 404. Use the required digit ...
+
+    >>> res = client.get("/foo/1/y")
+    >>> print res.content
+    First argument: 1 (<type 'str'>)
+    Second argument: y (<type 'str'>)
+
+Well, that works :)
+
+Purge the test client and go on ...
+
+    >>> del client
+    Kill IOLoop thread: None 
+    Kill current thread: <_MainThread(MainThread, started ...)>
+    Kill IOLoop thread: None 
+    Kill current thread: <_MainThread(MainThread, started ...)>
+
+
+Last but not least: Let's take a look at the low level classes::
+
+    >>> from rjdj.djangotornado.testing import TestResponse
+    >>> res = TestResponse()
+    >>> res.status_code
+    200
+
+    >>> res = TestResponse(status_code=404)
+    >>> res.status_code
+    404
+
+    >>> res.content
+    ''
+
+    >>> res = TestResponse(content="response content")
+    >>> res.content
+    'response content'
+
+The representation of the TestRespose class is the raw response
+containing headers and content (such as a web browser receives the reponse):
+
+    >>> res = TestResponse(status_code=404,
+    ...                    content="404 Not Found",
+    ...                    headers={"Content-Type":"text/html; encoding=utf-8",
+    ...                             "Etag":"HexValue"})
+    >>> res
+    Etag: HexValue
+    Content-type: text/html; encoding=utf-8
+    404 Not Found
+
+    >>> res.raw_response()
+    'Etag: HexValue\nContent-type: text/html; encoding=utf-8\n404 Not Found'
+
+
+    >>> from rjdj.djangotornado.testing import TestResponseHeaders
+
+    >>> headers = TestResponseHeaders()
+    Traceback (most recent call last):
+    ...
+    TypeError: __init__() takes exactly 2 arguments (1 given)
+
+The class requires a simple dict. It may even be empty!
+
+    >>> headers = TestResponseHeaders({"Content-Type":"text/plain; encoding=utf-8"})
+    Kill IOLoop thread: None 
+    Kill current thread: <_MainThread(MainThread, started 140735079234720)>
+    Kill IOLoop thread: None 
+    Kill current thread: <_MainThread(MainThread, started 140735079234720)>
+
+    >>> headers
+    [('Content-Type', 'text/plain; encoding=utf-8')]
+
+    >>> headers['Content-Type']
+    'text/plain; encoding=utf-8'
+
+    >>> headers['Set-Cookie'] = "cookie_name=cookie_value;"
+    Traceback (most recent call last):
+    ...
+    AttributeError: You are not allowed to set headers once they are defined.
 
