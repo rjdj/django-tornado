@@ -36,7 +36,8 @@ class CustomTestLayer(object):
 def test_suite():
     """Return Test Suite"""
     optionflags = doctest.NORMALIZE_WHITESPACE | doctest.ELLIPSIS
-    tests = DocFileSuite('tests.txt', optionflags=optionflags)
-    suite = unittest.TestSuite((tests,))
+    testing = DocFileSuite('testing.txt', optionflags=optionflags)
+    handlers = DocFileSuite('handlers.txt', optionflags=optionflags)
+    suite = unittest.TestSuite((testing,handlers,))
     suite.layer = CustomTestLayer
     return suite

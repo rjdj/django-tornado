@@ -1,5 +1,6 @@
 ==============================================================================
-  $ TESTS FOR RJDJ.DJANGOTORNADO PACKAGE
+  $ TESTS FOR DJANGOTORNADO PACKAGE
+  $ rjdj.djangotornado.testing.py
 ==============================================================================
 
     >>> from pprint import pprint

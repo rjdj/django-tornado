@@ -55,17 +55,11 @@ class TestResponseHeaders:
 class TestResponseHandler(urllib2.BaseHandler):
     """Custom handler for 400's and 500's responses"""
 
-    def http_error_400(self, req, page, code, msg, hdrs):
+    def general_response(self, req, page, code, msg, hdrs):
         return page
 
-    def http_error_404(self, req, page, code, msg, hdrs):
-        return page
+    http_error_400 = http_error_404 = http_error_405 = http_error_500 = general_response
 
-    def http_error_405(self, req, page, code, msg, hdrs):
-        return page
-
-    def http_error_500(self, req, page, code, msg, hdrs):
-        return page
 
 
 class TestServer(httpserver.HTTPServer):

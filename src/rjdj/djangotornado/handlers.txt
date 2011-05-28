@@ -1,0 +1,80 @@
+==============================================================================
+  $ TESTS FOR DJANGOTORNADO PACKAGE
+  $ rjdj.djangotornado.handlers.py
+==============================================================================
+
+    >>> from pprint import pprint
+
+First create a fake settings module. We need that for the default
+POST/GET data encoding.
+
+    >>> class SettingsModule(dict):
+    ...
+    ...     def __init__(self,f):
+    ...         self.__file__ = f
+    ...
+    ...     __all__ = []
+
+    >>> settings = SettingsModule(__file__)
+    >>> settings["DEFAULT_CHARSET"] = "utf-8"
+
+Set up Django environment with the fake settings module:
+
+    >>> from django.core.management import setup_environ
+    >>> res = setup_environ(settings)
+
+
+In order to use Django views with ansyncronous Tornado we need to
+provide an adaptor that converts a Tornado request into a Django
+request as good as possible.
+    >>> from rjdj.djangotornado.handlers import DjangoRequest
+    >>> from tornado.httpserver import HTTPRequest
+
+    >>> adaptor = DjangoRequest()
+    Traceback (most recent call last):
+    ...
+       adaptor = DjangoRequest()
+    TypeError: __init__() takes exactly 2 arguments (1 given)
+
+
+    >>> tornado_req = HTTPRequest('DELETE',u'/')
+    >>> adaptor = DjangoRequest(tornado_req)
+    Traceback (most recent call last):
+    ...
+    ValueError: Method must be GET or POST
+
+    >>> tornado_req.method = "GET"
+    >>> adaptor = DjangoRequest(tornado_req)
+    >>> adaptor
+    <HttpRequest
+    GET:<QueryDict: {}>,
+    POST:<QueryDict: {}>,
+    COOKIES:{},
+    META:{'HTTP_HOST': '127.0.0.1',
+     'PROTOCOL': 'http',
+     'REMOTE_ADDR': None,
+     'SERVER_NAME': '127.0.0.1'}>
+
+    >>> adaptor.build_absolute_uri()
+    u'http://127.0.0.1/'
+
+    >>> adaptor["HTTP_HOST"] = "example.com"
+    >>> adaptor.build_absolute_uri(u'/test')
+    u'http://example.com/test'
+
+
+    >>> tornado_req = HTTPRequest('GET',u'/testhandler?key=value')
+    >>> adaptor = DjangoRequest(tornado_req)
+    >>> adaptor.GET
+    <QueryDict: {u'key': [u'value']}>
+    >>> adaptor.POST
+    <QueryDict: {}>
+
+    >>> tornado_req = HTTPRequest('POST',u'/testhandler')
+    >>> tornado_req.body = 'data=some_b64_string&signature=some_hmac_sig&key=1&key=2&key=3'
+    >>> adaptor = DjangoRequest(tornado_req)
+    >>> adaptor.GET
+    <QueryDict: {}>
+    >>> adaptor.POST
+    <QueryDict: {u'data': [u'some_b64_string'], u'key': [u'1', u'2', u'3'], u'signature': [u'some_hmac_sig']}>
+

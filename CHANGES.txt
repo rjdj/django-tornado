@@ -5,6 +5,8 @@ CHANGES for rjdj.djangotornado
 trunk
 -----
 
+  - added DjangoHandler class and DjangoRequest adaptor
+
   - added TestClient and TestServer
 
   - added testing framework
