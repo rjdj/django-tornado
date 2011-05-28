@@ -1,0 +1,291 @@
+==============================================================================
+  $ TESTS FOR RJDJ.DJANGOTORNADO PACKAGE
+==============================================================================
+
+    >>> from pprint import pprint
+    >>> from rjdj.djangotornado.testing import TestServer
+
+A test server runs it's IOLoop in the background to keep the test
+thread as the main thread and enable printing.
+
+The TestServer class is a subclass of Tornado's HTTPServer and
+requires at least a set of handlers (URLs) and an optional IOLoop instance:
+
+    >>> server = TestServer()
+    Traceback (most recent call last):
+    ...
+    TypeError: __init__() takes at least 2 arguments (1 given)
+
+So let's create a TestServer instance with an empty handler set.
+
+    >>> handlers = ()
+    >>> server = TestServer(handlers)
+
+The TestServer instance is not started automatically.
+
+    >>> server._started
+    False
+
+The test server uses the global IOLoop instance.
+
+    >>> server.io_loop
+    <tornado.ioloop.IOLoop object at 0x...>
+
+    >>> server.io_loop.running()
+    False
+
+So let's try to start the testserver.
+
+    >>> server.start()
+    Traceback (most recent call last):
+    ...
+    Exception: You are not allowed ...
+    Use 'testserver.run()' instead!
+
+Ok, we are not allowed to start the testserver instance in the same
+thread as the test.
+    >>> server.run()
+
+We can see that the server spawns a new thread.
+
+    >>> print server._io_thread
+    <Thread(Thread-1, started daemon ...)>
+
+We should not quit the thread from outside, but instead shut down the
+server or delete it from memory.
+
+    >>> server._stop()
+    >>> print server._io_thread
+    None
+
+    >>> server.run()
+    >>> print server._io_thread
+    <Thread(Thread-2, started daemon ...)>
+
+    >>> server.port
+    10000
+
+You can spawn only one testserver at a time.
+
+    >>> temp_server = TestServer(())
+    >>> temp_server.run()
+    Traceback (most recent call last):
+    ...
+    error: [Errno 48] Address already in use
+
+
+    >>> del temp_server
+
+
+If we want to update the url configuration we can run the update_app command.
+
+    >>> from tornado.web import RequestHandler
+    >>> class TestHandler(RequestHandler):
+    ...     def get(self):
+    ...         self.write("Hello World!")
+    ...         self.finish()
+
+    >>> handlers = (
+    ...     (r"/", TestHandler),
+    ...     )
+    >>> server.update_app(handlers)
+
+Try it out!
+
+    >>> url = "http://localhost:%d/" % server.port
+    >>> import urllib2
+    >>> res = urllib2.urlopen(url)
+    >>> res.read()
+    'Hello World!'
+
+Great!
+
+Stop the test server and try again. We expect the server to refuse the connection.
+
+    >>> server._stop()
+    >>> res = urllib2.urlopen(url)
+    Traceback (most recent call last):
+    ...
+    URLError: <urlopen error [Errno 61] Connection refused>
+
+
+Last but not least clean up ...
+
+    >>> del server
+    Kill IOLoop thread: None 
+    Kill current thread: <_MainThread(MainThread, started ...)>
+    Kill IOLoop thread: None 
+    Kill current thread: <_MainThread(MainThread, started ...)>
+
+Done.
+
+Now let's go on to the TestClient class. Within tests only this class
+is used, and the test server is spawned by the testclient.
+
+    >>> from rjdj.djangotornado.testing import TestClient
+
+    >>> client = TestClient()
+    Traceback (most recent call last):
+    ...
+    TypeError: __init__() takes at least 2 arguments (1 given)
+
+    >>> client = TestClient(())
+
+The client creates a URL which with it connects to the test server instance.
+
+    >>> client.get_url("/")
+    'http://localhost:10000/'
+
+We can specify a protocol as well.
+
+    >>> client.get_url("/", "https")
+    'https://localhost:10000/'
+
+The test client does not care about the protocol as long as it is a string:
+
+    >>> client.get_url("/", u"my-protocol")
+    'my-protocol://localhost:10000/'
+
+    >>> client.get_url("/", 123)
+    Traceback (most recent call last):
+    ...
+    TypeError: Protocol must be string or unicode.
+
+
+We need to provide a set of handlers that are passed to the server instance.
+
+    >>> class TestHandler(RequestHandler):
+    ...
+    ...     def post(self):
+    ...         self.write("URL: %s\n" % self.request.uri)
+    ...         self.write("Method: POST\n")
+    ...         self.write(str(self.request))
+    ...         self.finish()
+    ...
+    ...     def get(self):
+    ...         self.write("URL: %s\n" % self.request.uri)
+    ...         self.write("Method: GET\n")
+    ...         self.write(str(self.request))
+    ...         self.finish()
+    ...
+    ...     def put(self):
+    ...         self.write("Method: PUT\n")
+    ...         self.finish()
+    ...
+    ...     def delete(self):
+    ...         self.write("Method: DELETE\n")
+    ...         self.finish()
+    ...
+    >>> class BrokenTestHandler(RequestHandler):
+    ...
+    ...     def get(self):
+    ...         """We want to provoke a 500 page :)"""
+    ...         eval("5 = self")
+    ...         self.write(str(self.request))
+    ...         self.finish()
+
+We have 3 different URLs:
+
+    >>> handlers = (
+    ...     (r"/", TestHandler),
+    ...     (r"/broken", BrokenTestHandler),
+    ...     (r"/get/(\d+)", TestHandler),
+    ...     (r"/post/(\w+)", TestHandler),
+    ...     )
+
+Let's test them one by one!
+
+    >>> client = TestClient(handlers)
+    >>> client
+    <rjdj.djangotornado.testing.TestClient object at 0x...>
+
+    >>> res = client.get("/")
+
+The representation of the test response is the raw server response:
+
+    >>> res
+    Content-length: 272
+    Etag: "..."
+    Content-type: text/html; charset=UTF-8
+    Server: TornadoServer/1.2.1
+    URL: /
+    Method: GET
+    HTTPRequest(...)
+
+We also have a status_code attribute:
+
+    >>> res.status_code
+    200
+
+And a content attribute:
+
+    >>> print res.content
+    URL: /
+    Method: GET
+    HTTPRequest(...)
+
+As well as a _headers attribute:
+
+    >>> pprint(res._headers)
+    {'content-length': '272',
+     'content-type': 'text/html; charset=UTF-8',
+     'etag': '"..."',
+     'server': 'TornadoServer/1.2.1'}
+
+
+So take a look at the POST.
+Everything should be the same as before:
+
+    >>> res = client.post("/")
+    >>> res.status_code
+    200
+    >>> print res.content
+    URL: /
+    Method: POST
+    HTTPRequest(...)
+
+
+So what happens when we look up a URL that does not exist?
+
+    >>> res = client.get("/a-uri-that-does-not-exist")
+    >>> res.status_code
+    404
+    >>> res
+    Content-length: 69
+    Content-type: text/html; charset=UTF-8
+    Server: TornadoServer/1.2.1
+    <html><title>404: Not Found</title><body>404: Not Found</body></html>
+
+Very nice: 404
+That's what we want ...
+But what about the 500's?
+
+    >>> res = client.get("/broken")
+    >>> res.status_code
+    500
+    >>> res
+    Content-length: 93
+    Content-type: text/html; charset=UTF-8
+    Server: TornadoServer/1.2.1
+    <html><title>500: Internal Server Error</title><body>500: Internal Server Error</body></html>
+
+
+Tornado also handles PUT and DELETE methods, but the test client does
+not yet :(
+
+    >>> client.put("/")
+    Traceback (most recent call last):
+    ...
+    NotImplementedError
+
+    >>> client.delete("/")
+    Traceback (most recent call last):
+    ...
+    NotImplementedError
+
+
+
+TODO (chaudum):
+ - Test POST and GET parameters in TestClient
+ - Tests for TestResponse and TestResponseHeaders classes
+

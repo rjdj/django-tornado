@@ -5,6 +5,11 @@ CHANGES for rjdj.djangotornado
 trunk
 -----
 
+  - added TestClient and TestServer
+
+  - added testing framework
+
+
 2011-05-23 0.2.3
 ----------------
 
