@@ -18,9 +18,11 @@ class DjangoRequest(HttpRequest):
     """Tornado Request --> Django Request"""
 
     _tornado_request = None
+    _cookies = None
 
-    def __init__(self, tornado_request_type):
+    def __init__(self, tornado_request_type, cookies=None):
         self._tornado_request = tornado_request_type
+        self._cookies = cookies
         super(DjangoRequest,self).__init__()
         self.tornado_to_django()
 
@@ -44,11 +46,18 @@ class DjangoRequest(HttpRequest):
         self.META["HTTP_HOST"] = tr.host
         self.META["PROTOCOL"] = tr.protocol
         self.META["REMOTE_ADDR"] = tr.remote_ip
-        #self.META["SERVER_PORT"] = 8000
-        if hasattr(tr,"cookies"):
-            for k,v in tr.cookies:
-                self.COOKIES[k] = v
 
+        self.COOKIES = {}
+        if not self._cookies:
+            import Cookie
+            self._cookies = Cookie.BaseCookie()
+            cookies = tr.headers.get("Cookie","")
+            if cookies:
+                self._cookies.load(str(cookies))
+        for k,v in self._cookies.items():
+            self.COOKIES[k] = v.value
+
+        # Authentication Middleware not implemented yet
         self.user = None
         self.session = {}
 
@@ -91,8 +100,8 @@ class DjangoHandler(RequestHandler):
             response.render()
         self.write(response.content)
 
-    def start_thread(self, request, *args):
-        request = DjangoRequest(request)
+    def start_thread(self, request, cookies, *args):
+        request = DjangoRequest(request, cookies)
         thread = Thread(target = self.worker,
                         args = (request,) + args,
                         kwargs = {})
@@ -108,12 +117,12 @@ class DjangoHandler(RequestHandler):
     @asynchronous
     def get(self, *args):
         """GET Handler"""
-        self.start_thread(self.request, *args)
+        self.start_thread(self.request, self.cookies, *args)
 
     @asynchronous
     def post(self, *args):
         """POST Handler"""
-        self.start_thread(self.request, *args)
+        self.start_thread(self.request, self.cookies, *args)
 
     def return_response(self, response):
         try:

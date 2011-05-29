@@ -34,7 +34,7 @@ request as good as possible.
     Traceback (most recent call last):
     ...
        adaptor = DjangoRequest()
-    TypeError: __init__() takes exactly 2 arguments (1 given)
+    TypeError: __init__() takes at least 2 arguments (1 given)
 
 
     >>> tornado_req = HTTPRequest('DELETE',u'/')
@@ -70,11 +70,39 @@ request as good as possible.
     >>> adaptor.POST
     <QueryDict: {}>
 
-    >>> tornado_req = HTTPRequest('POST',u'/testhandler')
-    >>> tornado_req.body = 'data=some_b64_string&signature=some_hmac_sig&key=1&key=2&key=3'
+    >>> tornado_req = HTTPRequest('POST',
+    ...                           u'/testhandler',
+    ...                           body='data=some_b64_string&signature=some_hmac_sig&key=1&key=2&key=3')
     >>> adaptor = DjangoRequest(tornado_req)
     >>> adaptor.GET
     <QueryDict: {}>
     >>> adaptor.POST
     <QueryDict: {u'data': [u'some_b64_string'], u'key': [u'1', u'2', u'3'], u'signature': [u'some_hmac_sig']}>
 
+
+    >>> tornado_req = HTTPRequest('GET',u'/')
+    >>> adaptor = DjangoRequest(tornado_req)
+    >>> adaptor.COOKIES
+    {}
+
+    >>> from tornado.httputil import HTTPHeaders
+    >>> headers = HTTPHeaders()
+    >>> headers.add('Cookie', u'session_id=6f5902ac237024bdd0c176cb93063dc4')
+
+    >>> tornado_req = HTTPRequest('GET',u'/',headers=headers)
+    >>> adaptor = DjangoRequest(tornado_req)
+    >>> adaptor.COOKIES
+    {'session_id': '6f5902ac237024bdd0c176cb93063dc4'}
+
+
+    >>> import Cookie
+    >>> cookies = Cookie.BaseCookie()
+    >>> cookies.load({"session_id":"6f5902ac237024bdd0c176cb93063dc4",
+    ...               "name":"value"})
+    >>> cookies
+    <BaseCookie: name='value' session_id='6f5902ac237024bdd0c176cb93063dc4'>
+
+    >>> tornado_req = HTTPRequest('GET',u'/')
+    >>> adaptor = DjangoRequest(tornado_req, cookies)
+    >>> adaptor.COOKIES
+    {'name': 'value', 'session_id': '6f5902ac237024bdd0c176cb93063dc4'}
