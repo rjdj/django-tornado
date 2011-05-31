@@ -5,6 +5,11 @@ CHANGES for rjdj.djangotornado
 trunk
 -----
 
+  - added interactive console script
+
+  - convert Cookie to str only if it is unicode and we have a newer
+    version of tornado than v1.2.1
+
   - added DjangoHandler class and DjangoRequest adaptor
 
   - added TestClient and TestServer

@@ -17,7 +17,11 @@ def patch_prepare(func):
     def inner_func(self,**kwargs):
         if u'Cookie' in self.request.headers:
             raw_cookie = self.request.headers[u'Cookie']
-            self.request.headers[u'Cookie'] = escape.native_str(raw_cookie)
+            if isinstance(raw_cookie, unicode):
+                if hasattr(escape,"native_str"):
+                    self.request.headers[u'Cookie'] = escape.native_str(raw_cookie)
+                else:
+                    print "Method 'native_str' in module 'escape' not found."
+                    self.request.headers[u'Cookie'] = str(raw_cookie)
         return func(self)
     return inner_func
-
