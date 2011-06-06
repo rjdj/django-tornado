@@ -44,8 +44,8 @@ class Command(BaseCommand):
     def handle(self, addrport='', *args, **options):
         """Handle command call"""
 
-        sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)
-        sys.stderr = os.fdopen(sys.stderr.fileno(), 'w', 0)
+        #sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)
+        #sys.stderr = os.fdopen(sys.stderr.fileno(), 'w', 0)
 
         if args:
             raise CommandError('Usage is runserver %s' % self.args)
@@ -64,7 +64,8 @@ class Command(BaseCommand):
             raise CommandError("%r is not a valid port number." % port)
 
         self.quit_command = (sys.platform == 'win32') and 'CTRL-BREAK' or 'CONTROL-C'
-        self.run(*args, **options)
+        #self.run(*args, **options)
+        self.inner_run()
 
     def admin_media(self):
         """Return path and url of development admin media"""

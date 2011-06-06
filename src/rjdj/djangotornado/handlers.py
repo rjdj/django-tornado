@@ -10,8 +10,15 @@
 __docformat__ = "reStructuredText"
 
 from threading import Thread
+
 from tornado.web import RequestHandler, asynchronous
-from django.http import HttpRequest, QueryDict , MultiValueDict
+from tornado.ioloop import IOLoop
+
+from django.http import (HttpRequest,
+                         QueryDict , MultiValueDict,
+                         HttpResponse,
+                         )
+from django.conf import settings
 
 
 class DjangoRequest(HttpRequest):
@@ -80,25 +87,62 @@ class DjangoRequest(HttpRequest):
         return self._tornado_request.body
 
 
-class DjangoHandler(RequestHandler):
-    """Handler for Django views"""
+class CallableType:
 
-    django_view = None
+    def __init__(self, func):
+        self.func = func
 
-    def __init__(self, application, request, **kwargs):
-        if "django_view" in kwargs.keys():
-            self.django_view = kwargs.get("django_view")
+    def __call__(self, *args, **kwargs):
+        return self.func(*args, **kwargs)
+
+
+class SynchronousDjangoHandler(RequestHandler):
+    """Synchronous Handler for Django views"""
+
+    _view = None
+
+    def _get_stacktrace(self):
+        import traceback
+        self.set_status(500)
+        tb = traceback.format_exc(limit=10)
+        self.set_header("Content-Type", "text/plain; encoding=utf-8")
+        return tb
+
+    def initialize(self, django_view):
+        self._view = CallableType(django_view)
+
+    def prepare(self):
+        response = None
+        req = DjangoRequest(self.request, self.cookies)
+        if settings.DEBUG:
+            try:
+                response = self._view(req)
+            except Exception, e:
+                response = self._get_stacktrace()
         else:
-            raise KeyError("Missing key 'django_view' in keyword arguments.")
-        super(DjangoHandler,self).__init__(application, request)
+            response = self._view(req)
+
+        self.return_response(response)
 
     def convert_response(self, response):
         self.set_status(response.status_code)
         for k,v in response.items():
-            self.set_header(k, v)
+            self.set_header(k.encode("utf-8"), v.encode("utf-8"))
         if hasattr(response, "render"):
             response.render()
-        self.write(response.content)
+        self.write(response.content.encode("utf-8"))
+
+    def return_response(self, response):
+        """Response can either be a HttpResponse object or string"""
+        if isinstance(response, HttpResponse):
+            self.convert_response(response)
+        else:
+            self.write(str(response).encode("utf-8"))
+        self.finish()
+
+
+class DjangoHandler(SynchronousDjangoHandler):
+    """Asynchronous Handler for Django views"""
 
     def start_thread(self, request, cookies, *args):
         request = DjangoRequest(request, cookies)
@@ -110,9 +154,22 @@ class DjangoHandler(RequestHandler):
 
     def worker(self, *args):
         """Worker that is processes in separate thread"""
-        res = self.django_view(*args)
+        if settings.DEBUG:
+            try:
+                res = self._view(*args)
+            except Exception, e:
+                res = self._get_stacktrace()
+        else:
+            res = self._view(*args)
+
         cb = self.async_callback(self.return_response, res)
-        _io_loop.add_callback(cb)
+        io_loop = IOLoop.instance()
+        io_loop.add_callback(cb)
+
+    def prepare(self):
+        """Override prepare"""
+        # this would be the place for Django Middleware
+        pass
 
     @asynchronous
     def get(self, *args):
@@ -123,9 +180,3 @@ class DjangoHandler(RequestHandler):
     def post(self, *args):
         """POST Handler"""
         self.start_thread(self.request, self.cookies, *args)
-
-    def return_response(self, response):
-        try:
-            self.convert_response(response)
-        finally:
-            self.finish()

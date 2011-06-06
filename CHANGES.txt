@@ -5,6 +5,10 @@ CHANGES for rjdj.djangotornado
 trunk
 -----
 
+  - removed unused run() method in runtornado command
+
+  - added synchronous django handler
+
   - added interactive console script
 
   - convert Cookie to str only if it is unicode and we have a newer
