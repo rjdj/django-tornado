@@ -2,14 +2,18 @@ _Copyright &copy; 2011 Reality Jockey Ltd. and Contributors._
 
 _This file is part of django-tornado._
 
-_Django-tornado is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. django-tornado is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details. You should have received a copy of the GNU Lesser General Public License along with django-tornado. If not, see <http://www.gnu.org/licenses/>._
+_Django-tornado is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. Django-tornado is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details._
+
+_You should have received a copy of the GNU Lesser General Public License along with django-tornado. If not, see <http://www.gnu.org/licenses/>._
+
+
 Run Tornado Web Server with Django
 ==================================
 
 Acknowledgement
 ---------------
 
-This package is based upon ideas and code sinppets from:
+This package is based upon ideas and code snippets from:
 
   - https://github.com/koblas/django-on-tornado/blob/master/myproject/django_tornado/management/commands/runtornado.py
 
