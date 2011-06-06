@@ -79,3 +79,6 @@ Example configuration with Buildout
           extras_require = dict(instance=[]),
     )
 
+####GitHub Repository:
+
+    git://github.com/rjdj/django-tornado.git
