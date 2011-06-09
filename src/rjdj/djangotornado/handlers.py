@@ -33,6 +33,7 @@ from django.http import (HttpRequest,
                          )
 from django.conf import settings
 from django.core.handlers.base import BaseHandler
+from django.core import signals
 
 class DjangoRequest(HttpRequest):
     """Tornado Request --> Django Request"""
@@ -77,10 +78,6 @@ class DjangoRequest(HttpRequest):
         for k,v in self._cookies.items():
             self.COOKIES[k] = v.value
 
-        # Authentication Middleware not implemented yet
-        self.user = None
-        self.session = {}
-
     def build_absolute_uri(self,location=None):
         uri = super(DjangoRequest,self).build_absolute_uri(location)
         return unicode(uri)
@@ -112,6 +109,7 @@ class CallableType:
 
 
 class MiddlewareProvider(BaseHandler):
+    """Lazy loading Middleware"""
 
     initLock = Lock()
 
@@ -130,12 +128,6 @@ class MiddlewareProvider(BaseHandler):
             finally:
                 self.initLock.release()
 
-    def process_request(self, request):
-        return request
-
-    def process_response(self, response):
-        return response
-
 
 middleware_provider = MiddlewareProvider()
 
@@ -149,6 +141,7 @@ class SynchronousDjangoHandler(RequestHandler):
         import traceback
         self.set_status(500)
         tb = traceback.format_exc(limit=10)
+        print tb
         self.set_header("Content-Type", "text/plain; encoding=utf-8")
         return tb
 
@@ -180,20 +173,21 @@ class SynchronousDjangoHandler(RequestHandler):
     def return_response(self, response):
         """Response can either be a HttpResponse object or string"""
         if self.request.connection.stream.closed():
-			return
-			
+            signals.request_finished.send(sender=middleware_provider.__class__)
+            return
         if isinstance(response, HttpResponse):
             self.convert_response(response)
         else:
             self.write(str(response).encode("utf-8"))
+        signals.request_finished.send(sender=middleware_provider.__class__)
         self.finish()
 
     def _apply_request_middleware(self, request):
+        signals.request_started.send(sender=middleware_provider.__class__)
         middleware_provider()
         for func in middleware_provider._request_middleware:
             func(request)
         return request
-
 
     def _apply_response_middleware(self, response):
         middleware_provider()
