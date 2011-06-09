@@ -4,6 +4,7 @@ CHANGES for rjdj.djangotornado
 
 trunk
 -----
+  - implemented "connection reset"-handling for asynchronous requests
 
   - removed unused run() method in runtornado command
 
