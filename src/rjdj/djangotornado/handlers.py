@@ -147,6 +147,9 @@ class SynchronousDjangoHandler(RequestHandler):
 
     def return_response(self, response):
         """Response can either be a HttpResponse object or string"""
+        if self.request.connection.stream.closed():
+			return
+			
         if isinstance(response, HttpResponse):
             self.convert_response(response)
         else:

@@ -92,7 +92,7 @@ You can spawn only one testserver at a time.
     >>> temp_server.run()
     Traceback (most recent call last):
     ...
-    error: [Errno 48] Address already in use
+    error: [Errno ...] Address already in use
 
 
     >>> del temp_server
@@ -127,7 +127,7 @@ Stop the test server and try again. We expect the server to refuse the connectio
     >>> res = urllib2.urlopen(url)
     Traceback (most recent call last):
     ...
-    URLError: <urlopen error [Errno 61] Connection refused>
+    URLError: <urlopen error [Errno ...] Connection refused>
 
 
 Last but not least clean up ...
@@ -441,9 +441,9 @@ The class requires a simple dict. It may even be empty!
 
     >>> headers = TestResponseHeaders({"Content-Type":"text/plain; encoding=utf-8"})
     Kill IOLoop thread: None 
-    Kill current thread: <_MainThread(MainThread, started 140735079234720)>
+    Kill current thread: <_MainThread(MainThread, started ...)>
     Kill IOLoop thread: None 
-    Kill current thread: <_MainThread(MainThread, started 140735079234720)>
+    Kill current thread: <_MainThread(MainThread, started ...)>
 
     >>> headers
     [('Content-Type', 'text/plain; encoding=utf-8')]
