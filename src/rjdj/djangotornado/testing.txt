@@ -1,3 +1,23 @@
+##############################################################################
+#
+# Copyright (c) 2011 Reality Jockey Ltd. and Contributors.
+# This file is part of django-tornado.
+#
+# Django-tornado is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Django-tornado is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Lesser General Public License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public License
+# along with django-tornado. If not, see <http://www.gnu.org/licenses/>.
+#
+##############################################################################
+
 ==============================================================================
   $ TESTS FOR DJANGOTORNADO PACKAGE
   $ rjdj.djangotornado.testing.py
@@ -72,7 +92,7 @@ You can spawn only one testserver at a time.
     >>> temp_server.run()
     Traceback (most recent call last):
     ...
-    error: [Errno 48] Address already in use
+    error: [Errno ...] Address already in use
 
 
     >>> del temp_server
@@ -107,7 +127,7 @@ Stop the test server and try again. We expect the server to refuse the connectio
     >>> res = urllib2.urlopen(url)
     Traceback (most recent call last):
     ...
-    URLError: <urlopen error [Errno 61] Connection refused>
+    URLError: <urlopen error [Errno ...] Connection refused>
 
 
 Last but not least clean up ...
@@ -421,9 +441,9 @@ The class requires a simple dict. It may even be empty!
 
     >>> headers = TestResponseHeaders({"Content-Type":"text/plain; encoding=utf-8"})
     Kill IOLoop thread: None 
-    Kill current thread: <_MainThread(MainThread, started 140735079234720)>
+    Kill current thread: <_MainThread(MainThread, started ...)>
     Kill IOLoop thread: None 
-    Kill current thread: <_MainThread(MainThread, started 140735079234720)>
+    Kill current thread: <_MainThread(MainThread, started ...)>
 
     >>> headers
     [('Content-Type', 'text/plain; encoding=utf-8')]

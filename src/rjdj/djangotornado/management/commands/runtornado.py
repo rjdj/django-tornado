@@ -1,7 +1,20 @@
 ##############################################################################
 #
 # Copyright (c) 2011 Reality Jockey Ltd. and Contributors.
-# All Rights Reserved.
+# This file is part of django-tornado.
+#
+# Django-tornado is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Django-tornado is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Lesser General Public License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public License
+# along with django-tornado. If not, see <http://www.gnu.org/licenses/>.
 #
 ##############################################################################
 
@@ -44,9 +57,6 @@ class Command(BaseCommand):
     def handle(self, addrport='', *args, **options):
         """Handle command call"""
 
-        #sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)
-        #sys.stderr = os.fdopen(sys.stderr.fileno(), 'w', 0)
-
         if args:
             raise CommandError('Usage is runserver %s' % self.args)
         if not addrport:
@@ -64,7 +74,6 @@ class Command(BaseCommand):
             raise CommandError("%r is not a valid port number." % port)
 
         self.quit_command = (sys.platform == 'win32') and 'CTRL-BREAK' or 'CONTROL-C'
-        #self.run(*args, **options)
         self.inner_run()
 
     def admin_media(self):
