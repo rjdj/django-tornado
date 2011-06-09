@@ -9,7 +9,7 @@
 
 __docformat__ = "reStructuredText"
 
-from threading import Thread
+from threading import Thread, Lock
 
 from tornado.web import RequestHandler, asynchronous
 from tornado.ioloop import IOLoop
@@ -19,7 +19,7 @@ from django.http import (HttpRequest,
                          HttpResponse,
                          )
 from django.conf import settings
-
+from django.core.handlers.base import BaseHandler
 
 class DjangoRequest(HttpRequest):
     """Tornado Request --> Django Request"""
@@ -87,6 +87,7 @@ class DjangoRequest(HttpRequest):
         return self._tornado_request.body
 
 
+
 class CallableType:
 
     def __init__(self, func):
@@ -94,6 +95,36 @@ class CallableType:
 
     def __call__(self, *args, **kwargs):
         return self.func(*args, **kwargs)
+
+
+
+class MiddlewareProvider(BaseHandler):
+
+    initLock = Lock()
+
+    def __call__(self):
+        if self._request_middleware is None:
+            self.initLock.acquire()
+            try:
+                try:
+                    # Check that middleware is still uninitialised.
+                    if self._request_middleware is None:
+                        self.load_middleware()
+                except:
+                    # Unload whatever middleware we got
+                    self._request_middleware = None
+                    raise
+            finally:
+                self.initLock.release()
+
+    def process_request(self, request):
+        return request
+
+    def process_response(self, response):
+        return response
+
+
+middleware_provider = MiddlewareProvider()
 
 
 class SynchronousDjangoHandler(RequestHandler):
@@ -114,6 +145,7 @@ class SynchronousDjangoHandler(RequestHandler):
     def prepare(self):
         response = None
         req = DjangoRequest(self.request, self.cookies)
+        req = self._apply_request_middleware(req)
         if settings.DEBUG:
             try:
                 response = self._view(req)
@@ -140,12 +172,26 @@ class SynchronousDjangoHandler(RequestHandler):
             self.write(str(response).encode("utf-8"))
         self.finish()
 
+    def _apply_request_middleware(self, request):
+        middleware_provider()
+        for func in middleware_provider._request_middleware:
+            func(request)
+        return request
+
+
+    def _apply_response_middleware(self, response):
+        middleware_provider()
+        for func in middleware_provider._response_middleware:
+            func(response)
+        return response
+
 
 class DjangoHandler(SynchronousDjangoHandler):
     """Asynchronous Handler for Django views"""
 
     def start_thread(self, request, cookies, *args):
         request = DjangoRequest(request, cookies)
+        request = self._apply_request_middleware(request)
         thread = Thread(target = self.worker,
                         args = (request,) + args,
                         kwargs = {})
@@ -169,7 +215,6 @@ class DjangoHandler(SynchronousDjangoHandler):
     def prepare(self):
         """Override prepare"""
         # this would be the place for Django Middleware
-        pass
 
     @asynchronous
     def get(self, *args):
