@@ -26,10 +26,8 @@ import os
 import sys
 
 from optparse import make_option
-
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
-
 from tornado.web import RequestHandler
 
 class WelcomeHandler(RequestHandler):
@@ -42,8 +40,11 @@ class WelcomeHandler(RequestHandler):
 
 
 class Command(BaseCommand):
+    option_list = BaseCommand.option_list
     help = "Starts a single threaded Tornado web server."
     args = '[optional port number, or ipaddr:port]'
+
+    can_import_settings = True
 
     def echo(self, *args, **kwargs):
         """Print in color to stdout"""
@@ -126,7 +127,7 @@ class Command(BaseCommand):
         self.echo(("\nDjango version %(version)s, using settings %(settings)r\n"
                    "Server is running at http://%(addr)s:%(port)s/\n"
                    "Quit the server with %(quit_command)s.\n" ) % {
-                      "version": django.get_version(),
+                      "version": self.get_version(),
                       "settings": settings.SETTINGS_MODULE,
                       "addr": self.addr,
                       "port": self.port,

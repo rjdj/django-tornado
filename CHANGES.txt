@@ -5,6 +5,8 @@ CHANGES for rjdj.djangotornado
 trunk
 -----
 
+  - allow --settings=... with runtornado command
+
   - added middleware provider
 
   - implemented "connection reset"-handling for asynchronous requests
