@@ -224,7 +224,7 @@ The representation of the test response is the raw server response:
     Content-length: 272
     Etag: "..."
     Content-type: text/html; charset=UTF-8
-    Server: TornadoServer/1.2.1
+    Server: TornadoServer/...
     URL: /
     Method: GET
     HTTPRequest(...)
@@ -247,7 +247,7 @@ As well as a _headers attribute:
     [('content-length', '272'),
      ('content-type', 'text/html; charset=UTF-8'),
      ('etag', '"..."'),
-     ('server', 'TornadoServer/1.2.1')]
+     ('server', 'TornadoServer/...')]
 
 
 So take a look at the POST.
@@ -270,7 +270,7 @@ So what happens when we look up a URL that does not exist?
     >>> res
     Content-length: 69
     Content-type: text/html; charset=UTF-8
-    Server: TornadoServer/1.2.1
+    Server: TornadoServer/...
     <html><title>404: Not Found</title><body>404: Not Found</body></html>
 
 Very nice: 404
@@ -283,7 +283,7 @@ But what about the 500's?
     >>> res
     Content-length: 93
     Content-type: text/html; charset=UTF-8
-    Server: TornadoServer/1.2.1
+    Server: TornadoServer/...
     <html><title>500: Internal Server Error</title><body>500: Internal Server Error</body></html>
 
 
@@ -375,15 +375,16 @@ Let's try a URL that requires arguments within the url!
     >>> res
     Content-length: 69
     Content-type: text/html; charset=UTF-8
-    Server: TornadoServer/1.2.1
+    Server: TornadoServer/...
     <html><title>404: Not Found</title><body>404: Not Found</body></html>
 
 Ooops, that url returns a 404. Use the required digit ...
+Parameters are passed as unicode characters:
 
     >>> res = client.get("/foo/1/y")
     >>> print res.content
-    First argument: 1 (<type 'str'>)
-    Second argument: y (<type 'str'>)
+    First argument: 1 (<type 'unicode'>)
+    Second argument: y (<type 'unicode'>)
 
 Well, that works :)
 

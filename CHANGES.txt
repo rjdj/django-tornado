@@ -5,6 +5,8 @@ CHANGES for rjdj.djangotornado
 trunk
 -----
 
+  - dependency on Tornado==2.0
+
   - allow --settings=... with runtornado command
 
   - added middleware provider

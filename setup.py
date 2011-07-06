@@ -32,6 +32,7 @@ setup(name = "rjdj.djangotornado",
       package_dir = {'':'src'},
       install_requires = ["distribute",
                           "Django",
+                          "tornado",
                           ],
       entry_points = {
           'console_scripts': [],

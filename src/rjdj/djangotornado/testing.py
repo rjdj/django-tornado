@@ -82,6 +82,7 @@ class TestServer(httpserver.HTTPServer):
     address = "localhost"
     _io_thread = None
     _started = False
+    _socket = None
 
     def __init__(self, handlers, io_loop=None):
         application = Application(handlers)
@@ -113,9 +114,8 @@ Use 'testserver.run()' instead!
         if port > 11000:
             raise Exception("Max ports reached.")
         try:
-            self.bind(port) #, "localhost")
+            self.bind(port)
         except Exception, e:
-            import pdb; pdb.set_trace()
             print "Try to bind port %d ... failed" % port
             port += 1
             print "New port %d" % port
@@ -137,7 +137,6 @@ Use 'testserver.run()' instead!
             self._io_thread.join()
             self._io_thread = None
             self.stop()
-            del self._socket
             self._socket = None
             self._started = False
 
