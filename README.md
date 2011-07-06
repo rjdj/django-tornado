@@ -44,6 +44,7 @@ Example configuration with Buildout
     Django=1.3
     zc.buildout=1.5.2
     rjdj.djangotornado=0.1
+    tornado=2.0
 
     [instance]
     recipe = zc.recipe.egg:script
@@ -52,10 +53,6 @@ Example configuration with Buildout
     extra-paths = ${tornado:location}
     arguments = settings
     initialization = from my.project import settings
-    
-    [tornado]
-    recipe = minitage.recipe.fetch
-    urls = git://github.com/facebook/tornado.git | git | | ${buildout:parts-directory}/tornado
 
 *setup.py* (excerpt)
 
@@ -69,6 +66,7 @@ Example configuration with Buildout
           packages = find_packages('src'),
           package_dir = {'':'src'},
           install_requires = ['Django',
+                              'tornado',
                               'rjdj.djangotornado',
                              ],
           entry_points = {
