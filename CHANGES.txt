@@ -5,6 +5,8 @@ CHANGES for rjdj.djangotornado
 trunk
 -----
 
+  - pass HTTP Referer and HTTP User-Agent in RequestAdaptor
+
   - dependency on Tornado==2.0
 
   - allow --settings=... with runtornado command

@@ -66,7 +66,8 @@ class DjangoRequest(HttpRequest):
         self.META["SERVER_NAME"] = tr.host
         self.META["HTTP_HOST"] = tr.host
         self.META["PROTOCOL"] = tr.protocol
-        self.META["REMOTE_ADDR"] = tr.remote_ip
+        self.META["HTTP_USER_AGENT"] = tr.headers.get("User-Agent")
+        self.META["HTTP_REFERER"] = tr.headers.get("Referer")
 
         self.COOKIES = {}
         if not self._cookies:
@@ -77,6 +78,7 @@ class DjangoRequest(HttpRequest):
                 self._cookies.load(str(cookies))
         for k,v in self._cookies.items():
             self.COOKIES[k] = v.value
+        del self._tornado_request
 
     def build_absolute_uri(self,location=None):
         uri = super(DjangoRequest,self).build_absolute_uri(location)

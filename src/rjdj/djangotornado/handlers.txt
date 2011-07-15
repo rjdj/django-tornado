@@ -71,8 +71,9 @@ request as good as possible.
     POST:<QueryDict: {}>,
     COOKIES:{},
     META:{'HTTP_HOST': '127.0.0.1',
+     'HTTP_REFERER': None,
+     'HTTP_USER_AGENT': None,
      'PROTOCOL': 'http',
-     'REMOTE_ADDR': None,
      'SERVER_NAME': '127.0.0.1'}>
 
     >>> adaptor.build_absolute_uri()
@@ -98,6 +99,7 @@ request as good as possible.
     <QueryDict: {}>
     >>> adaptor.POST
     <QueryDict: {u'data': [u'some_b64_string'], u'key': [u'1', u'2', u'3'], u'signature': [u'some_hmac_sig']}>
+
 
 
     >>> tornado_req = HTTPRequest('GET',u'/')
@@ -126,3 +128,20 @@ request as good as possible.
     >>> adaptor = DjangoRequest(tornado_req, cookies)
     >>> adaptor.COOKIES
     {'name': 'value', 'session_id': '6f5902ac237024bdd0c176cb93063dc4'}
+
+
+User-Agent:
+
+    >>> headers = HTTPHeaders()
+    >>> headers.add("User-Agent", u"Test Client 1.0; Mac OSX")
+    >>> headers.add("Referer", u"/")
+    >>> tornado_req = HTTPRequest('GET',u'/testhandler',
+    ...                           headers=headers)
+    >>> adaptor = DjangoRequest(tornado_req)
+
+    >>> adaptor.META["HTTP_USER_AGENT"]
+    u'Test Client 1.0; Mac OSX'
+
+    >>> adaptor.META["HTTP_REFERER"]
+    u'/'
+
