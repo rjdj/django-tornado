@@ -5,6 +5,9 @@ CHANGES for rjdj.djangotornado
 trunk
 -----
 
+2011-05-23 0.2.4
+----------------
+
   - pass HTTP Referer and HTTP User-Agent in RequestAdaptor
 
   - dependency on Tornado==2.0
