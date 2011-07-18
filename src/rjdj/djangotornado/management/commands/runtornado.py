@@ -29,6 +29,7 @@ from optparse import make_option
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 from tornado.web import RequestHandler
+from rjdj.djangotornado.signals import tornado_exit
 
 class WelcomeHandler(RequestHandler):
 
@@ -141,5 +142,6 @@ class Command(BaseCommand):
             ioloop.IOLoop.instance().start()
         except KeyboardInterrupt:
             self.echo("\nShutting down Tornado ...\n",color=31)
+        finally:
+            tornado_exit.send_robust(sender = self)
             sys.exit(0)
-

@@ -4,6 +4,10 @@ CHANGES for rjdj.djangotornado
 
 trunk
 -----
+  - tornado_exit signal will be triggered upon end of the runtornado 
+command
+
+  - added tornado_exit Django signal in signals.py
 
 2011-05-23 0.2.4
 ----------------

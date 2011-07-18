@@ -25,6 +25,28 @@
 
     >>> from pprint import pprint
     >>> from rjdj.djangotornado.testing import TestServer
+    >>> from rjdj.djangotornado.signals import tornado_exit
+
+First create a fake Django settings module. We need that for the default
+sending/receiving Django signals.
+
+    >>> class SettingsModule(dict):
+    ...
+    ...     def __init__(self,f):
+    ...         self.__file__ = f
+    ...         self.DEBUG = True
+    ...
+    ...     __all__ = []
+
+    >>> settings = SettingsModule(__file__)
+    >>> settings["DEFAULT_CHARSET"] = "utf-8"
+
+Set up Django environment with the fake settings module:
+
+    >>> from django.core.management import setup_environ
+    >>> res = setup_environ(settings)
+
+
 
 A test server runs it's IOLoop in the background to keep the test
 thread as the main thread and enable printing.
@@ -121,9 +143,18 @@ Try it out!
 
 Great!
 
-Stop the test server and try again. We expect the server to refuse the connection.
-
+Stop the test server and try again. We expect the server to refuse the connection and send a Django signal after stopping.
+    
+    >>> def on_tornado_exit(sender, **kwargs):
+    ...     print "Tornado exited"
+    
+    >>> tornado_exit.connect(on_tornado_exit)
     >>> server._stop()
+    Tornado exited
+    
+Disconnect the signal again, to avoid interruptions:
+    >>> tornado_exit.disconnect(on_tornado_exit)
+
     >>> res = urllib2.urlopen(url)
     Traceback (most recent call last):
     ...
@@ -383,8 +414,8 @@ Parameters are passed as unicode characters:
 
     >>> res = client.get("/foo/1/y")
     >>> print res.content
-    First argument: 1 (<type 'unicode'>)
-    Second argument: y (<type 'unicode'>)
+    First argument: 1 (<type '...'>)
+    Second argument: y (<type '...'>)
 
 Well, that works :)
 

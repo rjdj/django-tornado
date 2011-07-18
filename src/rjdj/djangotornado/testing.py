@@ -30,6 +30,8 @@ from tornado import ioloop, httpserver
 from tornado.httpclient import HTTPClient, HTTPRequest
 from tornado.web import Application, RequestHandler
 
+from rjdj.djangotornado.signals import tornado_exit
+
 class TestResponse(object):
     """Wrapper for urllib repsonse"""
 
@@ -139,6 +141,9 @@ Use 'testserver.run()' instead!
             self.stop()
             self._socket = None
             self._started = False
+            
+            # send exit signal
+            tornado_exit.send_robust(sender = self)
 
     def __del__(self):
         print "Kill IOLoop thread: %s " % self._io_thread
