@@ -24,30 +24,18 @@
 ==============================================================================
 
     >>> from pprint import pprint
-    >>> from rjdj.djangotornado.testing import TestServer
+    >>> from rjdj.djangotornado.testing import TestServer, TestClient
     >>> from rjdj.djangotornado.signals import tornado_exit
+    >>> from tornado.web import RequestHandler
+    >>> from rjdj.djangotornado.handlers import SynchronousDjangoHandler
 
-First create a fake Django settings module. We need that for the default
+First create a set up Django. We need that for the default
 sending/receiving Django signals.
-
-    >>> class SettingsModule(dict):
-    ...
-    ...     def __init__(self,f):
-    ...         self.__file__ = f
-    ...         self.DEBUG = True
-    ...
-    ...     __all__ = []
-
-    >>> settings = SettingsModule(__file__)
-    >>> settings["DEFAULT_CHARSET"] = "utf-8"
-
-Set up Django environment with the fake settings module:
-
-    >>> from django.core.management import setup_environ
-    >>> res = setup_environ(settings)
-
-
-
+    
+    >>> from django.conf import settings
+    >>> settings.configure(DEBUG=True, 
+    ...                    ROOT_URLCONF = "fake_djangotornado_urls")
+       
 A test server runs it's IOLoop in the background to keep the test
 thread as the main thread and enable printing.
 
@@ -122,7 +110,6 @@ You can spawn only one testserver at a time.
 
 If we want to update the url configuration we can run the update_app command.
 
-    >>> from tornado.web import RequestHandler
     >>> class TestHandler(RequestHandler):
     ...     def get(self):
     ...         self.write("Hello World!")
@@ -173,8 +160,6 @@ Done.
 
 Now let's go on to the TestClient class. Within tests only this class
 is used, and the test server is spawned by the testclient.
-
-    >>> from rjdj.djangotornado.testing import TestClient
 
     >>> client = TestClient()
     Traceback (most recent call last):
@@ -344,7 +329,7 @@ So purge the current client and create a new one with new url handlers.
     ...         self.write("Method: %s\n" % request.method)
     ...         self.write("Query: %s\n" % request.query)
     ...         self.write("Body: %s\n" % request.body)
-    ...         self.write("Arguments: %s" % request.arguments)
+    ...         self.write("Arguments: %s\n" % request.arguments)
     ...         if request.files:
     ...             self.write("Files: %s\n" % request.files)
     ...
@@ -364,14 +349,13 @@ So purge the current client and create a new one with new url handlers.
     ...         self.finish()
 
     >>> def django_handler(request):
-    ...     import pdb; pdb.set_trace()
-    ...     print request
+    ...     print request.POST
+    ...     print request.FILES
 
-    >>> from rjdj.djangotornado.handlers import SynchronousDjangoHandler
     >>> handlers = (
     ...     (r"/", ParameterHandler),
     ...     (r"/foo/(\d+)/([^/]+)", URLParameterHandler),
-    ...     #(r"/django", SynchronousDjangoHandler, dict(django_view = django_handler )),
+    ...     (r"/django", SynchronousDjangoHandler, dict(django_view = django_handler )),
     ...     )
     >>> client = TestClient(handlers)
 
@@ -428,13 +412,23 @@ Moreover the TestClient also supports file uploads by simply passing either
 the filepointer or the file's content within a dictionary to the post() method.
 Be aware that the test client does not (yet?) support for UTF-8 or binary encoded
 files (like images):
-    
-    >>> from cStringIO import StringIO
-    >>> temp_file = StringIO()
-    >>> print >>temp_file, "This is a test!"
+
+    >>> import tempfile
+    >>> temp_file = tempfile.TemporaryFile()
+    >>> temp_file.write("Hello World")
     >>> temp_file.seek(0)
-    >>> res = client.post("/", {"key": "value", "myfile": open("/home/claus/test") })
-    >>> res
+    >>> res = client.post("/", {"key": "value"}, files = { "myfile": temp_file })
+    >>> "myfile" in res.content and \
+    ... "Hello World" in res.content and \
+    ... "text/plain" in res.content and \
+    ... "filename" in res.content
+    True
+    
+This was a Tornado Request, now for some Django-style Request:
+    >>> temp_file.seek(0)
+    >>> res = client.post("/django", {"key": "value"}, files = { "myfile": temp_file })
+    <QueryDict: {u'key': [u'value']}>
+    <MultiValueDict: {u'myfile': [<InMemoryUploadedFile: <fdopen> (text/plain)>]}>
 
 Well, that works :)
 
