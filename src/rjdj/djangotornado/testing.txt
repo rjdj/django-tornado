@@ -351,6 +351,8 @@ So purge the current client and create a new one with new url handlers.
     >>> def django_handler(request):
     ...     print request.POST
     ...     print request.FILES
+    ...     for f in request.FILES:
+    ...         print f.read()
 
     >>> handlers = (
     ...     (r"/", ParameterHandler),
