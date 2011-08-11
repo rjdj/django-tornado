@@ -252,7 +252,7 @@ Let's test them one by one!
 The representation of the test response is the raw server response:
 
     >>> res
-    Content-length: 272
+    Content-length: 266
     Etag: "..."
     Content-type: text/html; charset=UTF-8
     Server: TornadoServer/...
@@ -275,7 +275,7 @@ And a content attribute:
 As well as a _headers attribute:
 
     >>> print res._headers
-    [('content-length', '272'),
+    [('content-length', '266'),
      ('content-type', 'text/html; charset=UTF-8'),
      ('etag', '"..."'),
      ('server', 'TornadoServer/...')]
@@ -343,8 +343,10 @@ So purge the current client and create a new one with new url handlers.
     ...     def output(self,request):
     ...         self.write("Method: %s\n" % request.method)
     ...         self.write("Query: %s\n" % request.query)
-    ...         self.write("Body: %s\n" % request.query)
+    ...         self.write("Body: %s\n" % request.body)
     ...         self.write("Arguments: %s" % request.arguments)
+    ...         if request.files:
+    ...             self.write("Files: %s\n" % request.files)
     ...
     ...     def post(self):
     ...         self.output(self.request)
@@ -361,10 +363,15 @@ So purge the current client and create a new one with new url handlers.
     ...         self.write("Second argument: %s (%s)\n" % (str(string),type(string)))
     ...         self.finish()
 
+    >>> def django_handler(request):
+    ...     import pdb; pdb.set_trace()
+    ...     print request
 
+    >>> from rjdj.djangotornado.handlers import SynchronousDjangoHandler
     >>> handlers = (
     ...     (r"/", ParameterHandler),
     ...     (r"/foo/(\d+)/([^/]+)", URLParameterHandler),
+    ...     #(r"/django", SynchronousDjangoHandler, dict(django_view = django_handler )),
     ...     )
     >>> client = TestClient(handlers)
 
@@ -374,14 +381,14 @@ You can add a dict to the GET method that represents the arguments.
     >>> print res.content
     Method: GET
     Query: foo=bar
-    Body: foo=bar
+    Body:
     Arguments: {'foo': ['bar']}
 
     >>> res = client.get("/",{"foo":"bar","array":[1,2]})
     >>> print res.content
     Method: GET
     Query: array=%5B1%2C+2%5D&foo=bar
-    Body: array=%5B1%2C+2%5D&foo=bar
+    Body: 
     Arguments: {'array': ['[1, 2]'], 'foo': ['bar']}
 
 Use the same pattern with POST requests:
@@ -390,14 +397,14 @@ Use the same pattern with POST requests:
     >>> print res.content
     Method: POST
     Query:
-    Body:
+    Body: foo=bar
     Arguments: {'foo': ['bar']}
 
     >>> res = client.post("/",{"foo":"bar","array":[1,2]})
     >>> print res.content
     Method: POST
     Query:
-    Body:
+    Body: array=%5B1%2C+2%5D&foo=bar
     Arguments: {'array': ['[1, 2]'], 'foo': ['bar']}
 
 Let's try a URL that requires arguments within the url!
@@ -416,6 +423,18 @@ Parameters are passed as unicode characters:
     >>> print res.content
     First argument: 1 (<type '...'>)
     Second argument: y (<type '...'>)
+
+Moreover the TestClient also supports file uploads by simply passing either 
+the filepointer or the file's content within a dictionary to the post() method.
+Be aware that the test client does not (yet?) support for UTF-8 or binary encoded
+files (like images):
+    
+    >>> from cStringIO import StringIO
+    >>> temp_file = StringIO()
+    >>> print >>temp_file, "This is a test!"
+    >>> temp_file.seek(0)
+    >>> res = client.post("/", {"key": "value", "myfile": open("/home/claus/test") })
+    >>> res
 
 Well, that works :)
 

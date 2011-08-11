@@ -25,6 +25,8 @@ __docformat__ = "reStructuredText"
 import urllib2
 import urllib
 import threading
+import mimetypes
+import MultipartPostHandler
 
 from tornado import ioloop, httpserver
 from tornado.httpclient import HTTPClient, HTTPRequest
@@ -42,7 +44,7 @@ class TestResponse(object):
 
     def raw_response(self):
         raw_response = ""
-        for key,value in self._headers.__dict__.items():
+        for key,value in self._headers.__dict__.iteritems():
             raw_response += "%s: %s\n" % (key.capitalize(),value)
         raw_response += self.content
         return raw_response
@@ -54,7 +56,7 @@ class TestResponseHeaders:
     """Header representation for the TestResponse"""
 
     def __init__(self, header_dict):
-        for k,v in header_dict.items():
+        for k,v in header_dict.iteritems():
             setattr(self, k, v)
 
     def __setitem__(self, key, value):
@@ -64,7 +66,7 @@ class TestResponseHeaders:
         return getattr(self, key)
 
     def __repr__(self):
-        return str(sorted(self.__dict__.items(), key=lambda x: x[0]))
+        return str(sorted(self.__dict__.iteritems(), key=lambda x: x[0]))
 
 
 class TestResponseHandler(urllib2.BaseHandler):
@@ -160,6 +162,43 @@ class TestClient(object):
     def __init__(self, handlers, io_loop=None):
         self._server = TestServer(handlers, io_loop)
 
+    def get_content_type(self, filename):
+        """ """
+        
+        return mimetypes.guess_type(filename)[0] or 'text/plain'
+
+    def encode_multipart_formdata(self, fields = {}, files = {}):
+        """
+        fields is a sequence of (name, value) elements for regular form fields.
+        files is a sequence of (name, filename, value) elements for data to be uploaded as files
+        Return (content_type, body) ready for httplib.HTTP instance
+        """
+        BOUNDARY = '----------ThIs_Is_tHe_bouNdaRY_$'
+        CRLF = '\r\n'
+        L = []
+        for (key, value) in fields.iteritems():
+            L.append('--' + BOUNDARY)
+            L.append('Content-Disposition: form-data; name="%s"' % key)
+            L.append('')
+            L.append(value)
+        for (key, fileptr) in files.iteritems():
+            filename = fileptr.name if hasattr(fileptr, "name") else ":memory:"
+            L.append('--' + BOUNDARY)
+            L.append('Content-Disposition: form-data; name="%s"; filename="%s"' % (key, filename))
+            L.append('Content-Type: %s' % self.get_content_type(filename))
+            L.append('')
+            try:
+                L.append(fileptr.read())
+            except: raise
+            finally:
+                fileptr.close()
+        L.append('--' + BOUNDARY + '--')
+        L.append('')
+        body = CRLF.join(L)
+        content_type = 'multipart/form-data; boundary=%s' % BOUNDARY
+        return content_type, body
+
+
     def get_url(self, uri, protocol="http"):
         if not (type(protocol) == str or type(protocol) == unicode):
             raise TypeError("Protocol must be string or unicode.")
@@ -171,7 +210,7 @@ class TestClient(object):
 
     def fetch(self, method, uri, data=None, **options):
         protocol = options.get("protocol","http")
-
+        headers = {}
         if data:
             if method == "GET":
                 # add GET parameters to url and force data to be None
@@ -180,13 +219,15 @@ class TestClient(object):
             elif method == "POST":
                 # urlencode POST parameters
                 data = urllib.urlencode(data)
+                    
         else:
             if method == "POST":
                 # force POST even without POST data
                 data = urllib.urlencode({})
+                
 
         self._server.run()
-        opener = urllib2.build_opener()
+        opener = urllib2.build_opener(MultipartPostHandler.MultipartPostHandler)
         opener.add_handler(TestResponseHandler())
         response = opener.open(self.get_url(uri,protocol), data)
         content = response.read()

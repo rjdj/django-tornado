@@ -49,7 +49,7 @@ class DjangoRequest(HttpRequest):
 
     def tornado_to_django(self):
         tr = self._tornado_request
-
+        
         if not tr.method:
             raise KeyError("Missing method in request")
         if tr.method not in ["GET","POST"]:

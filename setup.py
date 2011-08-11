@@ -22,7 +22,7 @@ import os
 from setuptools import setup, find_packages
 
 setup(name = "rjdj.djangotornado",
-      version = "0.2.4",
+      version = "0.2.4d8",
       author = 'Reality Jockey Limited',
       author_email = 'developer@rjdj.me',
       description = 'Use Tornado with your Django project.',
@@ -33,6 +33,7 @@ setup(name = "rjdj.djangotornado",
       install_requires = ["distribute",
                           "Django",
                           "tornado",
+                          "MultipartPostHandler",
                           ],
       entry_points = {
           'console_scripts': [],
