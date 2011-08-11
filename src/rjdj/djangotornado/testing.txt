@@ -351,8 +351,9 @@ So purge the current client and create a new one with new url handlers.
     >>> def django_handler(request):
     ...     print request.POST
     ...     print request.FILES
+    ...     print "File contents:" 
     ...     for f in request.FILES:
-    ...         print f.read()
+    ...         print f, ":", request.FILES[f].read()
 
     >>> handlers = (
     ...     (r"/", ParameterHandler),
@@ -431,6 +432,8 @@ This was a Tornado Request, now for some Django-style Request:
     >>> res = client.post("/django", {"key": "value"}, files = { "myfile": temp_file })
     <QueryDict: {u'key': [u'value']}>
     <MultiValueDict: {u'myfile': [<InMemoryUploadedFile: <fdopen> (text/plain)>]}>
+    File contents:
+    myfile : Hello World
 
 Well, that works :)
 
