@@ -24,12 +24,15 @@ __docformat__ = "reStructuredText"
 
 from threading import Thread, Lock
 
+from cStringIO import StringIO
+
 from tornado.web import RequestHandler, asynchronous
 from tornado.ioloop import IOLoop
 
 from django.http import (HttpRequest,
                          QueryDict , MultiValueDict,
                          HttpResponse,
+                         MultiPartParser,
                          )
 from django.conf import settings
 from django.core.handlers.base import BaseHandler
@@ -49,7 +52,7 @@ class DjangoRequest(HttpRequest):
 
     def tornado_to_django(self):
         tr = self._tornado_request
-
+        
         if not tr.method:
             raise KeyError("Missing method in request")
         if tr.method not in ["GET","POST"]:
@@ -59,15 +62,28 @@ class DjangoRequest(HttpRequest):
         self.path = tr.uri
         self.path_info = ''
 
-        self.GET = QueryDict(self.raw_get_data, encoding=self._encoding)
-        self.POST = QueryDict(self.raw_post_data, encoding=self._encoding)
-        self.FILES = MultiValueDict({})
-
         self.META["SERVER_NAME"] = tr.host
         self.META["HTTP_HOST"] = tr.host
         self.META["PROTOCOL"] = tr.protocol
         self.META["HTTP_USER_AGENT"] = tr.headers.get("User-Agent")
         self.META["HTTP_REFERER"] = tr.headers.get("Referer")
+        self.META["HTTP_CONTENT_TYPE"] = tr.headers.get("Content-Type")
+        self.META["HTTP_CONTENT_LENGTH"] = tr.headers.get("Content-Length")
+
+        self.GET = QueryDict(self.raw_get_data, encoding=self._encoding)
+        
+        self.POST = None
+        self.FILES = None
+        
+        if tr.files:
+            io = StringIO(self.raw_post_data)
+            upload_handlers = self._load_file_upload_handlers()
+            
+            parser = MultiPartParser(self.META, io, upload_handlers, self._encoding)
+            self.POST, self.FILES = parser.parse()
+        else:
+            self.POST = QueryDict(self.raw_post_data, encoding=self._encoding)
+            self.FILES = MultiValueDict({})
 
         self.COOKIES = {}
         if not self._cookies:
@@ -89,6 +105,17 @@ class DjangoRequest(HttpRequest):
             setattr(self,key,value)
         else:
             self.META[key] = value
+
+    def _load_file_upload_handlers(self):
+        handlers = []
+        for handler in settings.FILE_UPLOAD_HANDLERS:
+            tmp = handler.split(".")
+            cls = tmp.pop()
+            module = ".".join(tmp)
+            imp = __import__(module, fromlist = [cls])
+            handlers.append(getattr(imp, cls)())
+            
+        return handlers
 
     @property
     def raw_get_data(self):
@@ -154,6 +181,7 @@ class SynchronousDjangoHandler(RequestHandler):
         response = None
         req = DjangoRequest(self.request, self.cookies)
         req = self._apply_request_middleware(req)
+            
         if settings.DEBUG:
             try:
                 response = self._view(req)
@@ -187,8 +215,10 @@ class SynchronousDjangoHandler(RequestHandler):
     def _apply_request_middleware(self, request):
         signals.request_started.send(sender=middleware_provider.__class__)
         middleware_provider()
+        
         for func in middleware_provider._request_middleware:
             func(request)
+            
         return request
 
     def _apply_response_middleware(self, response):

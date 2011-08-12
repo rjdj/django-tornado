@@ -32,6 +32,9 @@ from tornado.web import Application, RequestHandler
 
 from rjdj.djangotornado.signals import tornado_exit
 
+from poster.encode import multipart_encode
+from poster.streaminghttp import register_openers
+
 class TestResponse(object):
     """Wrapper for urllib repsonse"""
 
@@ -42,7 +45,7 @@ class TestResponse(object):
 
     def raw_response(self):
         raw_response = ""
-        for key,value in self._headers.__dict__.items():
+        for key,value in self._headers.__dict__.iteritems():
             raw_response += "%s: %s\n" % (key.capitalize(),value)
         raw_response += self.content
         return raw_response
@@ -54,7 +57,7 @@ class TestResponseHeaders:
     """Header representation for the TestResponse"""
 
     def __init__(self, header_dict):
-        for k,v in header_dict.items():
+        for k,v in header_dict.iteritems():
             setattr(self, k, v)
 
     def __setitem__(self, key, value):
@@ -64,7 +67,7 @@ class TestResponseHeaders:
         return getattr(self, key)
 
     def __repr__(self):
-        return str(sorted(self.__dict__.items(), key=lambda x: x[0]))
+        return str(sorted(self.__dict__.iteritems(), key=lambda x: x[0]))
 
 
 class TestResponseHandler(urllib2.BaseHandler):
@@ -84,7 +87,6 @@ class TestServer(httpserver.HTTPServer):
     address = "localhost"
     _io_thread = None
     _started = False
-    _socket = None
 
     def __init__(self, handlers, io_loop=None):
         application = Application(handlers)
@@ -100,7 +102,7 @@ Use 'testserver.run()' instead!
 
     def run(self):
         """Start in background"""
-        assert not self._socket
+        assert not self._sockets
         if not self._started:
             if not self.io_loop.running():
                 self._io_thread = threading.Thread(target=self._run_background)
@@ -111,18 +113,6 @@ Use 'testserver.run()' instead!
             self._started = True
         else:
             print "Nothing to do. Server already started."
-
-    def try_bind(self, port):
-        if port > 11000:
-            raise Exception("Max ports reached.")
-        try:
-            self.bind(port)
-        except Exception, e:
-            print "Try to bind port %d ... failed" % port
-            port += 1
-            print "New port %d" % port
-            self.try_bind(port)
-        return port
 
     def _run_background(self):
         self.io_loop.start()
@@ -139,7 +129,7 @@ Use 'testserver.run()' instead!
             self._io_thread.join()
             self._io_thread = None
             self.stop()
-            self._socket = None
+            self._sockets = {}
             self._started = False
             
             # send exit signal
@@ -169,9 +159,10 @@ class TestClient(object):
             self._server.port,
             uri))
 
-    def fetch(self, method, uri, data=None, **options):
+    def fetch(self, method, uri, data=None, files = {}, **options):
         protocol = options.get("protocol","http")
-
+        headers = {}
+        opener = None
         if data:
             if method == "GET":
                 # add GET parameters to url and force data to be None
@@ -179,16 +170,23 @@ class TestClient(object):
                 data = None
             elif method == "POST":
                 # urlencode POST parameters
-                data = urllib.urlencode(data)
+                if files:
+                    opener = register_openers()
+                    data.update(files)
+                    data, headers = multipart_encode(data)
+                else:            
+                    data = urllib.urlencode(data)
+                    
         else:
             if method == "POST":
                 # force POST even without POST data
                 data = urllib.urlencode({})
 
-        self._server.run()
-        opener = urllib2.build_opener()
+
+        opener = opener or urllib2.build_opener()
         opener.add_handler(TestResponseHandler())
-        response = opener.open(self.get_url(uri,protocol), data)
+        self._server.run()
+        response = opener.open(urllib2.Request(self.get_url(uri,protocol), data, headers))
         content = response.read()
         self._server._stop()
         return TestResponse(response.code, content, response.headers.dict)
@@ -196,8 +194,8 @@ class TestClient(object):
     def get(self, uri, data=None, **options):
         return self.fetch("GET", uri, data, **options)
 
-    def post(self, uri, data=None, **options):
-        return self.fetch("POST", uri, data, **options)
+    def post(self, uri, data=None, files = {}, **options):
+        return self.fetch("POST", uri, data, files, **options)
 
     def put(self, uri, data=None, **options):
         raise NotImplementedError
