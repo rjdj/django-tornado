@@ -25,8 +25,6 @@ __docformat__ = "reStructuredText"
 import urllib2
 import urllib
 import threading
-import mimetypes
-#import MultipartPostHandler
 
 from tornado import ioloop, httpserver
 from tornado.httpclient import HTTPClient, HTTPRequest
@@ -152,43 +150,6 @@ class TestClient(object):
     def __init__(self, handlers, io_loop=None):
         self._server = TestServer(handlers, io_loop)
 
-    def get_content_type(self, filename):
-        """ """
-        
-        return mimetypes.guess_type(filename)[0] or 'text/plain'
-
-    def encode_multipart_formdata(self, fields = {}, files = {}):
-        """
-        fields is a sequence of (name, value) elements for regular form fields.
-        files is a sequence of (name, filename, value) elements for data to be uploaded as files
-        Return (content_type, body) ready for httplib.HTTP instance
-        """
-        BOUNDARY = '----------ThIs_Is_tHe_bouNdaRY_$'
-        CRLF = '\r\n'
-        L = []
-        for (key, value) in fields.iteritems():
-            L.append('--' + BOUNDARY)
-            L.append('Content-Disposition: form-data; name="%s"' % key)
-            L.append('')
-            L.append(value)
-        for (key, fileptr) in files.iteritems():
-            filename = fileptr.name if hasattr(fileptr, "name") else ":memory:"
-            L.append('--' + BOUNDARY)
-            L.append('Content-Disposition: form-data; name="%s"; filename="%s"' % (key, filename))
-            L.append('Content-Type: %s' % self.get_content_type(filename))
-            L.append('')
-            try:
-                L.append(fileptr.read())
-            except: raise
-            finally:
-                fileptr.close()
-        L.append('--' + BOUNDARY + '--')
-        L.append('')
-        body = CRLF.join(L)
-        content_type = 'multipart/form-data; boundary=%s' % BOUNDARY
-        return content_type, body
-
-
     def get_url(self, uri, protocol="http"):
         if not (type(protocol) == str or type(protocol) == unicode):
             raise TypeError("Protocol must be string or unicode.")
@@ -222,9 +183,9 @@ class TestClient(object):
                 data = urllib.urlencode({})
 
 
-        self._server.run()
         opener = opener or urllib2.build_opener()
         opener.add_handler(TestResponseHandler())
+        self._server.run()
         response = opener.open(urllib2.Request(self.get_url(uri,protocol), data, headers))
         content = response.read()
         self._server._stop()

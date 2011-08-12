@@ -75,7 +75,7 @@ class DjangoRequest(HttpRequest):
         self.POST = None
         self.FILES = None
         
-        if self._tornado_request.files:
+        if tr.files:
             io = StringIO(self.raw_post_data)
             upload_handlers = self._load_file_upload_handlers()
             
@@ -217,10 +217,8 @@ class SynchronousDjangoHandler(RequestHandler):
         middleware_provider()
         
         for func in middleware_provider._request_middleware:
-            try:
-                func(request)
-            except Exception as ex:
-                print ex
+            func(request)
+            
         return request
 
     def _apply_response_middleware(self, response):
