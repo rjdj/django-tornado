@@ -22,30 +22,11 @@
 
 __docformat__ = "reStructuredText"
 
-import os
-import sys
+from rjdj.djangotornado.management.commands.runtornado import current_application
 
-from tornado.web import URLSpec
-from rjdj.djangotornado.handlers import SynchronousDjangoHandler
-
-def stdprint(self, *args, **kwargs):
-    """Print in color to stdout"""
-    sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)
-    text = " ".join([str(item) for item in args])
-    color = kwargs.get("color",32)
-    sys.stdout.write("\033[0;%dm%s\033[0;m" % (color, text))
-
-def get_named_urlspecs(urls):
-    """ Returns Tornado-URLSpecs with names """
+def reverse(django_view, *args):
+    """ Shortcuts the reverse lookup of views in the application """
     
-    handlers = []
-    for url in urls:
-        if url[1] == SynchronousDjangoHandler and \
-           len(url) > 2 and \
-           "django_view" in url[2]:
-            name = url[2]["django_view"].__name__
-        else:
-            name = id(url[1])
-        handlers.append(URLSpec(*url, name = name))
-    return handlers
-
+    if not hasattr(django_view, "__name__"):
+        raise ValueError("Invalid view function")
+    return current_application.reverse_url(django_view.__name__, *args)

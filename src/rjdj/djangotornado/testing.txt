@@ -23,25 +23,27 @@
   $ rjdj.djangotornado.testing.py
 ==============================================================================
 
-    >>> from pprint import pprint
-    >>> from rjdj.djangotornado.testing import TestServer, TestClient
-    >>> from rjdj.djangotornado.signals import tornado_exit
-    >>> from tornado.web import RequestHandler
-    >>> from rjdj.djangotornado.handlers import SynchronousDjangoHandler
-
 First create a set up Django. We need that for the default
 sending/receiving Django signals.
     
     >>> from django.conf import settings
     >>> settings.configure(DEBUG=True, 
     ...                    ROOT_URLCONF = "fake_djangotornado_urls")
+
+    >>> from pprint import pprint
+    >>> from rjdj.djangotornado.testing import TestServer, TestClient
+    >>> from rjdj.djangotornado.signals import tornado_exit
+    >>> from tornado.web import RequestHandler
+    >>> from rjdj.djangotornado.handlers import SynchronousDjangoHandler
+
+
        
 A test server runs it's IOLoop in the background to keep the test
 thread as the main thread and enable printing.
 
 The TestServer class is a subclass of Tornado's HTTPServer and
 requires at least a set of handlers (URLs) and an optional IOLoop instance:
-
+  
     >>> server = TestServer()
     Traceback (most recent call last):
     ...
@@ -51,7 +53,7 @@ So let's create a TestServer instance with an empty handler set.
 
     >>> handlers = ()
     >>> server = TestServer(handlers)
-
+    
 The TestServer instance is not started automatically.
 
     >>> server._started
@@ -167,7 +169,7 @@ is used, and the test server is spawned by the testclient.
     TypeError: __init__() takes at least 2 arguments (1 given)
 
     >>> client = TestClient(())
-
+    
 The client creates a URL which with it connects to the test server instance.
 
     >>> client.get_url("/")
@@ -315,7 +317,6 @@ not yet :(
     Traceback (most recent call last):
     ...
     NotImplementedError
-
 
 
 By now POST and GET parameters have not been tested.
@@ -525,4 +526,48 @@ The class requires a simple dict. It may even be empty!
     Traceback (most recent call last):
     ...
     AttributeError: You are not allowed to set headers once they are defined.
+    
+Django-Tornado also allows reverse lookup of Django views when using the 
+Tornado wrappers:
+
+    >>> def default_handler(request):
+    ...     print "default handler called"
+
+    >>> def params_handler(request, digit, string):
+    ...     print "your digit was", digit, type(digit)
+    ...     print "and the string", string, type(string)
+
+    >>> handlers = (
+    ...     (r"/", SynchronousDjangoHandler, dict(django_view = default_handler )),
+    ...     (r"/params/(\d+)/([^/]+)", SynchronousDjangoHandler, dict(django_view = params_handler)),
+    ...     )
+    >>> client = TestClient(handlers)
+    
+The TestClient exposes the reverse-lookup functionality for testing:
+
+    >>> client.django_reverse()
+    Traceback (most recent call last):
+    ...
+    TypeError: django_reverse() takes at least 2 arguments (1 given)
+
+    >>> client.django_reverse(None)
+    Traceback (most recent call last):
+    ...
+    ValueError: Invalid view function
+    
+    >>> client.django_reverse("string")
+    Traceback (most recent call last):
+    ...
+    ValueError: Invalid view function
+    
+    >>> client.django_reverse(default_handler)
+    '/'
+    
+    >>> client.django_reverse(params_handler)
+    Traceback (most recent call last):
+    ...
+    AssertionError: required number of arguments not found
+    
+    >>> client.django_reverse(params_handler, 8, "hello")
+    '/params/8/hello'
 

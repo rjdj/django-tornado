@@ -31,9 +31,12 @@ from tornado.httpclient import HTTPClient, HTTPRequest
 from tornado.web import Application, RequestHandler
 
 from rjdj.djangotornado.signals import tornado_exit
+from rjdj.djangotornado.utils import get_named_urlspecs
 
 from poster.encode import multipart_encode
 from poster.streaminghttp import register_openers
+
+current_application = None
 
 class TestResponse(object):
     """Wrapper for urllib repsonse"""
@@ -89,9 +92,12 @@ class TestServer(httpserver.HTTPServer):
     _started = False
 
     def __init__(self, handlers, io_loop=None):
-        application = Application(handlers)
+        application = Application(get_named_urlspecs(handlers))
         io_loop = io_loop or ioloop.IOLoop.instance()
         super(TestServer, self).__init__(application, io_loop=io_loop)
+        global current_application
+        current_application = application
+
 
     def start(self):
         raise Exception("""You are not allowed to spawn a test server
@@ -185,10 +191,13 @@ class TestClient(object):
 
         opener = opener or urllib2.build_opener()
         opener.add_handler(TestResponseHandler())
-        self._server.run()
-        response = opener.open(urllib2.Request(self.get_url(uri,protocol), data, headers))
-        content = response.read()
-        self._server._stop()
+        try:
+            self._server.run()
+            response = opener.open(urllib2.Request(self.get_url(uri,protocol), data, headers))
+            content = response.read()
+        except: raise
+        finally:
+            self._server._stop()
         return TestResponse(response.code, content, response.headers.dict)
 
     def get(self, uri, data=None, **options):
@@ -202,6 +211,13 @@ class TestClient(object):
 
     def delete(self, uri, data=None, **options):
         raise NotImplementedError
+
+    def django_reverse(self, django_view, *args):
+        
+        if not hasattr(django_view, "__name__"):
+            raise ValueError("Invalid view function")
+            
+        return current_application.reverse_url(django_view.__name__, *args)
 
     def __del__(self):
         if self._server:

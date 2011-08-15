@@ -30,6 +30,10 @@ from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 from tornado.web import RequestHandler
 from rjdj.djangotornado.signals import tornado_exit
+from rjdj.djangotornado.utils import get_named_urlspecs
+
+
+current_application = None
 
 class WelcomeHandler(RequestHandler):
 
@@ -97,12 +101,14 @@ class Command(BaseCommand):
         FallbackHandler.prepare = patches.patch_prepare(FallbackHandler.prepare)
 
         django_app = wsgi.WSGIContainer(WSGIHandler())
-        handlers = ()
+        handlers = []
         try:
             urls =  __import__(settings.ROOT_URLCONF,
                                fromlist=[settings.ROOT_URLCONF])
+                               
             if hasattr(urls,"tornado_urls"):
-                handlers = urls.tornado_urls
+                handlers = get_named_urlspecs(urls.tornado_urls
+
         except ImportError:
             self.echo("No Tornado URL specified.",color=31)
 
@@ -136,6 +142,10 @@ class Command(BaseCommand):
                       })
 
         app = self.get_handler()
+        
+        global current_application
+        current_application = app
+        
         server = httpserver.HTTPServer(app)
         server.listen(int(self.port), address=self.addr)
         try:
