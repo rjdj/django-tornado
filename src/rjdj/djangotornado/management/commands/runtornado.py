@@ -107,7 +107,7 @@ class Command(BaseCommand):
                                fromlist=[settings.ROOT_URLCONF])
                                
             if hasattr(urls,"tornado_urls"):
-                handlers = get_named_urlspecs(urls.tornado_urls
+                handlers = get_named_urlspecs(urls.tornado_urls)
 
         except ImportError:
             self.echo("No Tornado URL specified.",color=31)
