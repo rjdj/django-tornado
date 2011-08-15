@@ -355,10 +355,15 @@ So purge the current client and create a new one with new url handlers.
     ...     for f in request.FILES:
     ...         print f, ":", request.FILES[f].read()
 
+    >>> def parameter_handler(request, digit, string):
+    ...     print "your digit was", digit, type(digit)
+    ...     print "and the string", string, type(string)
+
     >>> handlers = (
     ...     (r"/", ParameterHandler),
     ...     (r"/foo/(\d+)/([^/]+)", URLParameterHandler),
     ...     (r"/django", SynchronousDjangoHandler, dict(django_view = django_handler )),
+    ...     (r"/django/(\d+)/([^/]+)", SynchronousDjangoHandler, dict(django_view = parameter_handler)),
     ...     )
     >>> client = TestClient(handlers)
 
@@ -410,6 +415,21 @@ Parameters are passed as unicode characters:
     >>> print res.content
     First argument: 1 (<type '...'>)
     Second argument: y (<type '...'>)
+
+Using a Django Handler should work exactly the same:
+
+    >>> res = client.get("/django/x/y")
+    >>> res
+    Content-length: 69
+    Content-type: text/html; charset=UTF-8
+    Server: TornadoServer/...
+    <html><title>404: Not Found</title><body>404: Not Found</body></html>
+
+When using an integer:
+
+    >>> res = client.get("/django/1/y")
+    your digit was 1 <type 'unicode'>
+    and the string y <type 'unicode'>
 
 Moreover the TestClient also supports file uploads by simply passing either 
 the filepointer or the file's content within a dictionary to the post() method.

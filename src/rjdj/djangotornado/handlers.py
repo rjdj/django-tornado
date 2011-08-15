@@ -178,20 +178,8 @@ class SynchronousDjangoHandler(RequestHandler):
         self._view = CallableType(django_view)
 
     def prepare(self):
-        response = None
-        req = DjangoRequest(self.request, self.cookies)
-        req = self._apply_request_middleware(req)
+        pass
             
-        if settings.DEBUG:
-            try:
-                response = self._view(req)
-            except Exception, e:
-                response = self._get_stacktrace()
-        else:
-            response = self._view(req)
-
-        self.return_response(response)
-
     def convert_response(self, response):
         self.set_status(response.status_code)
         for k,v in response.items():
@@ -226,29 +214,48 @@ class SynchronousDjangoHandler(RequestHandler):
         for func in middleware_provider._response_middleware:
             func(response)
         return response
+    
+    def process_request(self, *args, **kwargs): 
+        """ Actual view execution """
+        
+        response = None
+        req = DjangoRequest(self.request, self.cookies)
+        req = self._apply_request_middleware(req)
+        
+        if settings.DEBUG:
+            try:
+                response = self._view(req, *args, **kwargs)
+            except Exception, e:
+                response = self._get_stacktrace()
+        else:
+            response = self._view(req, *args, **kwargs)
 
+        self.return_response(response)
+
+
+    get = post = put = delete = head = options = process_request
 
 class DjangoHandler(SynchronousDjangoHandler):
     """Asynchronous Handler for Django views"""
 
-    def start_thread(self, request, cookies, *args):
+    def start_thread(self, request, cookies, *args, **kwargs):
         request = DjangoRequest(request, cookies)
         request = self._apply_request_middleware(request)
         thread = Thread(target = self.worker,
                         args = (request,) + args,
-                        kwargs = {})
+                        kwargs = kwargs)
         thread.daemon = True
         thread.start()
 
-    def worker(self, *args):
+    def worker(self, *args, **kwargs):
         """Worker that is processes in separate thread"""
         if settings.DEBUG:
             try:
-                res = self._view(*args)
+                res = self._view(*args, **kwargs)
             except Exception, e:
                 res = self._get_stacktrace()
         else:
-            res = self._view(*args)
+            res = self._view(*args, **kwargs)
 
         cb = self.async_callback(self.return_response, res)
         io_loop = IOLoop.instance()
@@ -259,11 +266,11 @@ class DjangoHandler(SynchronousDjangoHandler):
         # this would be the place for Django Middleware
 
     @asynchronous
-    def get(self, *args):
+    def get(self, *args, **kwargs):
         """GET Handler"""
-        self.start_thread(self.request, self.cookies, *args)
+        self.start_thread(self.request, self.cookies, *args, **kwargs)
 
     @asynchronous
-    def post(self, *args):
+    def post(self, *args, **kwargs):
         """POST Handler"""
-        self.start_thread(self.request, self.cookies, *args)
+        self.start_thread(self.request, self.cookies, *args, **kwargs)
