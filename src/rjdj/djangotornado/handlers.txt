@@ -28,8 +28,11 @@
 Setup Django with some default settings...
 
     >>> from django.conf import settings
-    >>> settings.configure(DEBUG=True, 
-    ...                    ROOT_URLCONF = "fake_djangotornado_urls")
+    >>> try:
+    ...     settings.configure(DEBUG=True, 
+    ...                        ROOT_URLCONF = "fake_djangotornado_urls")
+    ... except RuntimeError:
+    ...     pass
        
 
 In order to use Django views with ansyncronous Tornado we need to
