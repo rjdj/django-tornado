@@ -25,24 +25,15 @@
 
     >>> from pprint import pprint
 
-First create a fake settings module. We need that for the default
-POST/GET data encoding.
+Setup Django with some default settings...
 
-    >>> class SettingsModule(dict):
-    ...
-    ...     def __init__(self,f):
-    ...         self.__file__ = f
-    ...
-    ...     __all__ = []
-
-    >>> settings = SettingsModule(__file__)
-    >>> settings["DEFAULT_CHARSET"] = "utf-8"
-
-Set up Django environment with the fake settings module:
-
-    >>> from django.core.management import setup_environ
-    >>> res = setup_environ(settings)
-
+    >>> from django.conf import settings
+    >>> try:
+    ...     settings.configure(DEBUG=True, 
+    ...                        ROOT_URLCONF = "fake_djangotornado_urls")
+    ... except RuntimeError:
+    ...     pass
+       
 
 In order to use Django views with ansyncronous Tornado we need to
 provide an adaptor that converts a Tornado request into a Django
