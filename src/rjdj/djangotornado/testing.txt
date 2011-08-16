@@ -545,29 +545,31 @@ Tornado wrappers:
     
 The TestClient exposes the reverse-lookup functionality for testing:
 
-    >>> client.django_reverse()
-    Traceback (most recent call last):
-    ...
-    TypeError: django_reverse() takes at least 2 arguments (1 given)
+    >>> from rjdj.djangotornado.shortcuts import reverse
 
-    >>> client.django_reverse(None)
+    >>> reverse()
+    Traceback (most recent call last):
+    ...
+    TypeError: reverse() takes at least 1 argument (0 given)
+
+    >>> reverse(None)
     Traceback (most recent call last):
     ...
     ValueError: Invalid view function
     
-    >>> client.django_reverse("string")
+    >>> reverse("string")
     Traceback (most recent call last):
     ...
     ValueError: Invalid view function
     
-    >>> client.django_reverse(default_handler)
+    >>> reverse(default_handler)
     '/'
     
-    >>> client.django_reverse(params_handler)
+    >>> reverse(params_handler)
     Traceback (most recent call last):
     ...
     AssertionError: required number of arguments not found
     
-    >>> client.django_reverse(params_handler, 8, "hello")
+    >>> reverse(params_handler, 8, "hello")
     '/params/8/hello'
 

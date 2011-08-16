@@ -31,9 +31,7 @@ from django.core.management.base import BaseCommand, CommandError
 from tornado.web import RequestHandler
 from rjdj.djangotornado.signals import tornado_exit
 from rjdj.djangotornado.utils import get_named_urlspecs
-
-
-current_application = None
+from rjdj.djangotornado.shortcuts import set_application
 
 class WelcomeHandler(RequestHandler):
 
@@ -142,9 +140,7 @@ class Command(BaseCommand):
                       })
 
         app = self.get_handler()
-        
-        global current_application
-        current_application = app
+        set_application(app)
         
         server = httpserver.HTTPServer(app)
         server.listen(int(self.port), address=self.addr)

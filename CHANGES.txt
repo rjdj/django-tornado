@@ -4,6 +4,10 @@ CHANGES for rjdj.djangotornado
 
 trunk
 -----
+  - reverse lookup of django views implemented
+
+  - file upload for testclient implemented
+
   - tornado_exit signal will be triggered upon end of the runtornado 
 command
 

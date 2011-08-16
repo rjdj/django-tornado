@@ -22,11 +22,27 @@
 
 __docformat__ = "reStructuredText"
 
-from rjdj.djangotornado.management.commands.runtornado import current_application
+from threading import Lock
+
+current_application = None
+lock = Lock()
+
+def set_application(app):
+    global lock
+    global current_application
+    
+    lock.acquire()
+    current_application = app
+    lock.release()
 
 def reverse(django_view, *args):
     """ Shortcuts the reverse lookup of views in the application """
     
+    global current_application
+    
+    if not current_application:
+        raise ValueError("No application found!")
     if not hasattr(django_view, "__name__"):
         raise ValueError("Invalid view function")
+        
     return current_application.reverse_url(django_view.__name__, *args)
