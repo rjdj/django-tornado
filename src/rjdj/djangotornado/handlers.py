@@ -28,6 +28,7 @@ from cStringIO import StringIO
 
 from tornado.web import RequestHandler, asynchronous
 from tornado.ioloop import IOLoop
+from tornado.wsgi import WSGIContainer
 
 from django.http import (HttpRequest,
                          QueryDict , MultiValueDict,
@@ -36,10 +37,10 @@ from django.http import (HttpRequest,
                          )
 from django.conf import settings
 from django.core.handlers.base import BaseHandler
-#from django.core.handlers.wsgi import WSGIRequest
+from django.core.handlers.wsgi import WSGIRequest
 from django.core import signals
 
-class DjangoRequest(HttpRequest):
+class DjangoRequest(WSGIRequest):
     """Tornado Request --> Django Request"""
 
     _tornado_request = None
@@ -48,7 +49,8 @@ class DjangoRequest(HttpRequest):
     def __init__(self, tornado_request_type, cookies=None):
         self._tornado_request = tornado_request_type
         self._cookies = cookies
-        super(DjangoRequest,self).__init__()
+        environ = WSGIContainer.environ(tornado_request_type)
+        super(DjangoRequest,self).__init__(environ)
         self.tornado_to_django()
 
     def tornado_to_django(self):
@@ -59,34 +61,6 @@ class DjangoRequest(HttpRequest):
         if tr.method not in ["GET","POST"]:
             raise ValueError("Method must be GET or POST")
 
-        self.method = tr.method
-        self.path = tr.uri
-        self.path_info = ''
-
-        self.META["SERVER_NAME"] = tr.host
-        self.META["SERVER_PORT"] = '80' # default value
-        self.META["PROTOCOL"] = tr.protocol
-        for header_key,header_value in tr.headers.iteritems():
-            key = "HTTP_%s" % header_key.upper().replace("-","_")
-            self.META[key] = header_value
-
-
-        self.GET = QueryDict(self.raw_get_data, encoding=self._encoding)
-        
-        self.POST = None
-        self.FILES = None
-        
-        if tr.files:
-            io = StringIO(self.raw_post_data)
-            upload_handlers = self._load_file_upload_handlers()
-            
-            parser = MultiPartParser(self.META, io, upload_handlers, self._encoding)
-            self.POST, self.FILES = parser.parse()
-        else:
-            self.POST = QueryDict(self.raw_post_data, encoding=self._encoding)
-            self.FILES = MultiValueDict({})
-
-        self.COOKIES = {}
         if not self._cookies:
             import Cookie
             self._cookies = Cookie.BaseCookie()
@@ -95,7 +69,6 @@ class DjangoRequest(HttpRequest):
                 self._cookies.load(str(cookies))
         for k,v in self._cookies.items():
             self.COOKIES[k] = v.value
-        del self._tornado_request
 
     def build_absolute_uri(self,location=None):
         uri = super(DjangoRequest,self).build_absolute_uri(location)

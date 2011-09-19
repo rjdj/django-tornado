@@ -57,11 +57,25 @@ request as good as possible.
     >>> tornado_req.method = "GET"
     >>> adaptor = DjangoRequest(tornado_req)
     >>> adaptor
-    <HttpRequest
+    <WSGIRequest
     GET:<QueryDict: {}>,
     POST:<QueryDict: {}>,
-    COOKIES:{},
-    META:{'PROTOCOL': 'http', 'SERVER_NAME': '127.0.0.1', 'SERVER_PORT': '80'}>
+    COOKIES:<BaseCookie: >,
+    META:{'PATH_INFO': u'/',
+     'QUERY_STRING': '',
+     'REMOTE_ADDR': None,
+     'REQUEST_METHOD': 'GET',
+     'SCRIPT_NAME': u'',
+     'SERVER_NAME': '127.0.0.1',
+     'SERVER_PORT': '80',
+     'SERVER_PROTOCOL': 'HTTP/1.0',
+     'wsgi.errors': <open file '<stderr>', mode 'w' at 0x...>,
+     'wsgi.input': <io.BytesIO object at 0x...>,
+     'wsgi.multiprocess': True,
+     'wsgi.multithread': False,
+     'wsgi.run_once': False,
+     'wsgi.url_scheme': 'http',
+     'wsgi.version': (1, 0)}>
 
     >>> adaptor.build_absolute_uri()
     u'http://127.0.0.1/'
@@ -92,7 +106,7 @@ request as good as possible.
     >>> tornado_req = HTTPRequest('GET',u'/')
     >>> adaptor = DjangoRequest(tornado_req)
     >>> adaptor.COOKIES
-    {}
+    <BaseCookie: >
 
     >>> from tornado.httputil import HTTPHeaders
     >>> headers = HTTPHeaders()
@@ -101,7 +115,7 @@ request as good as possible.
     >>> tornado_req = HTTPRequest('GET',u'/',headers=headers)
     >>> adaptor = DjangoRequest(tornado_req)
     >>> adaptor.COOKIES
-    {'session_id': '6f5902ac237024bdd0c176cb93063dc4'}
+    <BaseCookie: session_id='6f5902ac237024bdd0c176cb93063dc4'>
 
 
     >>> import Cookie
@@ -114,7 +128,7 @@ request as good as possible.
     >>> tornado_req = HTTPRequest('GET',u'/')
     >>> adaptor = DjangoRequest(tornado_req, cookies)
     >>> adaptor.COOKIES
-    {'name': 'value', 'session_id': '6f5902ac237024bdd0c176cb93063dc4'}
+    <BaseCookie: name='value' session_id='6f5902ac237024bdd0c176cb93063dc4'>
 
 
 User-Agent:
