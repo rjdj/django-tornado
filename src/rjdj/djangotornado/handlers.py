@@ -36,6 +36,7 @@ from django.http import (HttpRequest,
                          )
 from django.conf import settings
 from django.core.handlers.base import BaseHandler
+#from django.core.handlers.wsgi import WSGIRequest
 from django.core import signals
 
 class DjangoRequest(HttpRequest):
@@ -63,12 +64,10 @@ class DjangoRequest(HttpRequest):
         self.path_info = ''
 
         self.META["SERVER_NAME"] = tr.host
-        self.META["HTTP_HOST"] = tr.host
         self.META["PROTOCOL"] = tr.protocol
-        self.META["HTTP_USER_AGENT"] = tr.headers.get("User-Agent")
-        self.META["HTTP_REFERER"] = tr.headers.get("Referer")
-        self.META["HTTP_CONTENT_TYPE"] = tr.headers.get("Content-Type")
-        self.META["HTTP_CONTENT_LENGTH"] = tr.headers.get("Content-Length")
+        for header_key,header_value in tr.headers.iteritems():
+            key = "HTTP_%s" % header_key.upper().replace("-","_")
+            self.META[key] = header_value
 
         self.GET = QueryDict(self.raw_get_data, encoding=self._encoding)
         
