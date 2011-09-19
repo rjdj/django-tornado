@@ -239,7 +239,7 @@ Let's test them one by one!
 The representation of the test response is the raw server response:
 
     >>> res
-    Content-length: 266
+    Content-length: ...
     Etag: "..."
     Content-type: text/html; charset=UTF-8
     Server: TornadoServer/...
@@ -262,7 +262,7 @@ And a content attribute:
 As well as a _headers attribute:
 
     >>> print res._headers
-    [('content-length', '266'),
+    [('content-length', '...'),
      ('content-type', 'text/html; charset=UTF-8'),
      ('etag', '"..."'),
      ('server', 'TornadoServer/...')]

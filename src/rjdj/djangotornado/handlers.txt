@@ -61,13 +61,7 @@ request as good as possible.
     GET:<QueryDict: {}>,
     POST:<QueryDict: {}>,
     COOKIES:{},
-    META:{'HTTP_CONTENT_LENGTH': None,
-     'HTTP_CONTENT_TYPE': None,
-     'HTTP_HOST': '127.0.0.1',
-     'HTTP_REFERER': None,
-     'HTTP_USER_AGENT': None,
-     'PROTOCOL': 'http',
-     'SERVER_NAME': '127.0.0.1'}>
+    META:{'PROTOCOL': 'http', 'SERVER_NAME': '127.0.0.1', 'SERVER_PORT': '80'}>
 
     >>> adaptor.build_absolute_uri()
     u'http://127.0.0.1/'

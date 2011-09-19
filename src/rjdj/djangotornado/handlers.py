@@ -64,10 +64,12 @@ class DjangoRequest(HttpRequest):
         self.path_info = ''
 
         self.META["SERVER_NAME"] = tr.host
+        self.META["SERVER_PORT"] = '80' # default value
         self.META["PROTOCOL"] = tr.protocol
         for header_key,header_value in tr.headers.iteritems():
             key = "HTTP_%s" % header_key.upper().replace("-","_")
             self.META[key] = header_value
+
 
         self.GET = QueryDict(self.raw_get_data, encoding=self._encoding)
         
