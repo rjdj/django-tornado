@@ -35,14 +35,15 @@ def set_application(app):
     current_application = app
     lock.release()
 
-def reverse(django_view, *args):
+def reverse(handler_name, *args):
     """ Shortcuts the reverse lookup of views in the application """
-    
     global current_application
-    
+
     if not current_application:
         raise ValueError("No application found!")
-    if not hasattr(django_view, "__name__"):
-        raise ValueError("Invalid view function")
-        
-    return current_application.reverse_url(django_view.__name__, *args)
+    if not isinstance(handler_name,str):
+        try:
+            handler_name = handler_name.__name__
+        except AttributeError:
+            raise KeyError('%s not found in named urls' % handler_name)
+    return current_application.reverse_url(handler_name, *args)

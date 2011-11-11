@@ -139,6 +139,7 @@ class SynchronousDjangoHandler(RequestHandler):
     """Synchronous Handler for Django views"""
 
     _view = None
+    _handler_name = ""
 
     def _get_stacktrace(self):
         import traceback
@@ -148,8 +149,9 @@ class SynchronousDjangoHandler(RequestHandler):
         self.set_header("Content-Type", "text/plain; encoding=utf-8")
         return tb
 
-    def initialize(self, django_view):
+    def initialize(self, django_view, **kwargs):
         self._view = CallableType(django_view)
+        self._handler_name = kwargs.get("handler_name","synchronous_django_handler")
 
     def prepare(self):
         pass

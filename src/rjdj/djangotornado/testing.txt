@@ -555,12 +555,14 @@ The TestClient exposes the reverse-lookup functionality for testing:
     >>> reverse(None)
     Traceback (most recent call last):
     ...
-    ValueError: Invalid view function
+    KeyError: 'None not found in named urls'
+
     
     >>> reverse("string")
     Traceback (most recent call last):
     ...
-    ValueError: Invalid view function
+    KeyError: 'string not found in named urls'
+
     
     >>> reverse(default_handler)
     '/'

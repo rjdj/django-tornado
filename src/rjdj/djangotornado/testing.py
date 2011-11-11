@@ -28,8 +28,9 @@ import threading
 
 from tornado import ioloop, httpserver
 from tornado.httpclient import HTTPClient, HTTPRequest
-from tornado.web import Application, RequestHandler
+from tornado.web import RequestHandler
 
+from rjdj.djangotornado.patches import DjangoApplication
 from rjdj.djangotornado.signals import tornado_exit
 from rjdj.djangotornado.utils import get_named_urlspecs
 
@@ -93,7 +94,7 @@ class TestServer(httpserver.HTTPServer):
 
     def __init__(self, handlers, io_loop=None):
 
-        application = Application(get_named_urlspecs(handlers))
+        application = DjangoApplication(get_named_urlspecs(handlers))
         io_loop = io_loop or ioloop.IOLoop.instance()
         super(TestServer, self).__init__(application, io_loop=io_loop)
         set_application(application)
@@ -126,7 +127,7 @@ Use 'testserver.run()' instead!
     def update_app(self, handlers):
         """Stop server, update handlers, and start in backgrounda again"""
         self._stop()
-        self.request_callback = Application(handlers)
+        self.request_callback = DjangoApplication(handlers)
         self.run()
 
     def _stop(self):

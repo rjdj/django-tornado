@@ -92,7 +92,8 @@ class Command(BaseCommand):
         """Return Tornado application with Django WSGI handlers"""
         from django.core.handlers.wsgi import WSGIHandler
         from tornado import wsgi
-        from tornado.web import Application, FallbackHandler, StaticFileHandler
+        from tornado.web import FallbackHandler, StaticFileHandler
+        from rjdj.djangotornado.patches import DjangoApplication
 
         # Patch prepare method from Tornado's FallbackHandler
         from rjdj.djangotornado import patches
@@ -116,7 +117,7 @@ class Command(BaseCommand):
             (r'%s(.*)' % admin_media_url, StaticFileHandler, {"path": admin_media_path}),
             (r'.*', FallbackHandler, dict(fallback=django_app)),
             )
-        return Application(handlers)
+        return DjangoApplication(handlers)
 
     def run(self, *args, **options):
         """Run application either with or without autoreload"""
