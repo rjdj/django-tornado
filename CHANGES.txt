@@ -4,6 +4,10 @@ CHANGES for rjdj.djangotornado
 
 trunk
 -----
+2013-08-13 0.3.2
+----------------
+
+  - Fixed broken imports for Django 1.5
 
 2011-11-11 0.3.1
 ----------------

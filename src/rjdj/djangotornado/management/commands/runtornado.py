@@ -29,6 +29,7 @@ from optparse import make_option
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 from tornado.web import RequestHandler
+from tornado.options import parse_command_line
 from rjdj.djangotornado.signals import tornado_exit
 from rjdj.djangotornado.utils import get_named_urlspecs
 from rjdj.djangotornado.shortcuts import set_application
@@ -93,7 +94,6 @@ class Command(BaseCommand):
         from django.core.handlers.wsgi import WSGIHandler
         from tornado import wsgi
         from tornado.web import FallbackHandler, StaticFileHandler
-        from rjdj.djangotornado.patches import DjangoApplication
 
         # Patch prepare method from Tornado's FallbackHandler
         from rjdj.djangotornado import patches
@@ -104,7 +104,7 @@ class Command(BaseCommand):
         try:
             urls =  __import__(settings.ROOT_URLCONF,
                                fromlist=[settings.ROOT_URLCONF])
-                               
+
             if hasattr(urls,"tornado_urls"):
                 handlers = get_named_urlspecs(urls.tornado_urls)
 
@@ -117,7 +117,7 @@ class Command(BaseCommand):
             (r'%s(.*)' % admin_media_url, StaticFileHandler, {"path": admin_media_path}),
             (r'.*', FallbackHandler, dict(fallback=django_app)),
             )
-        return DjangoApplication(handlers)
+        return patches.DjangoApplication(handlers, **{"debug": settings.DEBUG})
 
     def run(self, *args, **options):
         """Run application either with or without autoreload"""
@@ -128,27 +128,29 @@ class Command(BaseCommand):
         import django
         from tornado import httpserver, ioloop
 
+        parse_command_line()
+
         self.echo("Validating models...\n")
         self.validate(display_num_errors=True)
         self.echo(("\nDjango version %(version)s, using settings %(settings)r\n"
                    "Server is running at http://%(addr)s:%(port)s/\n"
                    "Quit the server with %(quit_command)s.\n" ) % {
-                      "version": self.get_version(),
-                      "settings": settings.SETTINGS_MODULE,
-                      "addr": self.addr,
-                      "port": self.port,
-                      "quit_command": self.quit_command,
-                      })
+                       "version": self.get_version(),
+                       "settings": settings.SETTINGS_MODULE,
+                       "addr": self.addr,
+                       "port": self.port,
+                       "quit_command": self.quit_command,
+                   })
 
         app = self.get_handler()
         set_application(app)
-        
+
         server = httpserver.HTTPServer(app)
         server.listen(int(self.port), address=self.addr)
         try:
             ioloop.IOLoop.instance().start()
         except KeyboardInterrupt:
-            self.echo("\nShutting down Tornado ...\n",color=31)
+            self.echo("\nShutting down Tornado ...\n", color=31)
         finally:
-            tornado_exit.send_robust(sender = self)
+            tornado_exit.send_robust(sender=self)
             sys.exit(0)

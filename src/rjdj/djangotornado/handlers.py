@@ -30,15 +30,21 @@ from tornado.web import RequestHandler, asynchronous
 from tornado.ioloop import IOLoop
 from tornado.wsgi import WSGIContainer
 
-from django.http import (HttpRequest,
-                         QueryDict , MultiValueDict,
-                         HttpResponse,
-                         MultiPartParser,
-                         )
 from django.conf import settings
 from django.core.handlers.base import BaseHandler
 from django.core.handlers.wsgi import WSGIRequest
 from django.core import signals
+from django.http import (HttpRequest,
+                         QueryDict,
+                         HttpResponse,
+)
+
+try:
+    from django.http.multipartparser import MultiPartParser
+    from django.utils.datastructures import MultiValueDict
+except ImportError:
+    from django.http import MultiPartParser, MultiValueDict
+
 
 class DjangoRequest(WSGIRequest):
     """Tornado Request --> Django Request"""

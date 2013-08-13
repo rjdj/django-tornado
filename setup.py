@@ -22,7 +22,7 @@ import os
 from setuptools import setup, find_packages
 
 setup(name = "rjdj.djangotornado",
-      version = "0.3.1",
+      version = "0.3.2",
       author = 'Reality Jockey Limited',
       author_email = 'developer@rjdj.me',
       description = 'Use Tornado with your Django project.',
