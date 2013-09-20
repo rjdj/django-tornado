@@ -25,6 +25,7 @@ __docformat__ = "reStructuredText"
 import os
 import sys
 
+import logging
 from optparse import make_option
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
@@ -33,6 +34,9 @@ from tornado.options import parse_command_line
 from rjdj.djangotornado.signals import tornado_exit
 from rjdj.djangotornado.utils import get_named_urlspecs
 from rjdj.djangotornado.shortcuts import set_application
+
+
+logger = logging.getLogger()
 
 class WelcomeHandler(RequestHandler):
 
@@ -49,15 +53,6 @@ class Command(BaseCommand):
     args = '[optional port number, or ipaddr:port]'
 
     can_import_settings = True
-
-    def echo(self, *args, **kwargs):
-        """Print in color to stdout"""
-        text = " ".join([str(item) for item in args])
-        if settings.DEBUG:
-            color = kwargs.get("color",32)
-            self.stdout.write("\033[0;%dm%s\033[0;m" % (color, text))
-        else:
-            print text
 
     def handle(self, addrport='', *args, **options):
         """Handle command call"""
@@ -109,7 +104,7 @@ class Command(BaseCommand):
                 handlers = get_named_urlspecs(urls.tornado_urls)
 
         except ImportError:
-            self.echo("No Tornado URL specified.",color=31)
+            logger.warn("No Tornado URL specified.")
 
         admin_media_path, admin_media_url = self.admin_media()
         handlers += (
@@ -130,11 +125,11 @@ class Command(BaseCommand):
 
         parse_command_line()
 
-        self.echo("Validating models...\n")
+        print "Validating models..."
         self.validate(display_num_errors=True)
-        self.echo(("\nDjango version %(version)s, using settings %(settings)r\n"
+        logger.info("\nDjango version %(version)s, using settings %(settings)r\n"
                    "Server is running at http://%(addr)s:%(port)s/\n"
-                   "Quit the server with %(quit_command)s.\n" ) % {
+                   "Quit the server with %(quit_command)s.\n" % {
                        "version": self.get_version(),
                        "settings": settings.SETTINGS_MODULE,
                        "addr": self.addr,
@@ -150,7 +145,7 @@ class Command(BaseCommand):
         try:
             ioloop.IOLoop.instance().start()
         except KeyboardInterrupt:
-            self.echo("\nShutting down Tornado ...\n", color=31)
+            logger.warn("Shutting down Tornado ...")
         finally:
             tornado_exit.send_robust(sender=self)
             sys.exit(0)

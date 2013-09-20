@@ -22,12 +22,12 @@ import os
 from setuptools import setup, find_packages
 
 setup(name = "rjdj.djangotornado",
-      version = "0.3.2",
+      version = "0.3.3",
       author = 'Reality Jockey Limited',
       author_email = 'developer@rjdj.me',
-      description = 'Use Tornado with your Django project.',
+      description = 'Run your Django project within Tornado’s WSGI container.',
       url = 'http://github.com/organizations/rjdj',
-	  namespace_packages = ['rjdj'],
+      namespace_packages = ['rjdj'],
       packages = find_packages('src'),
       package_dir = {'':'src'},
       install_requires = ["distribute",

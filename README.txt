@@ -7,11 +7,9 @@ _Django-tornado is free software: you can redistribute it and/or modify it under
 _You should have received a copy of the GNU Lesser General Public License along with django-tornado. If not, see <http://www.gnu.org/licenses/>._
 
 
-Run Tornado Web Server with Django
-==================================
+# Run your Django project within Tornado’s WSGI container.
 
-Acknowledgement
----------------
+## Acknowledgement
 
 This package is based upon ideas and code snippets from:
 
@@ -22,8 +20,7 @@ which is also based on:
   - http://geekscrap.com/2010/02/integrate-tornado-in-django/
 
 
-Installation with Buildout
---------------------------
+## Installation with Buildout
 
   - Add "rjdj.djangotornado" to your requirements in setup.py
 
@@ -32,8 +29,7 @@ Installation with Buildout
   - Make sure you have the "tornado" package in your sys.path
 
 
-Example configuration with Buildout
------------------------------------
+## Example configuration with Buildout
 
 *buildout.cfg* (excerpt)
 
@@ -41,16 +37,13 @@ Example configuration with Buildout
     find-links = http://download.rjdj.me/python
 
     [versions]
-    Django=1.3
-    zc.buildout=1.5.2
-    rjdj.djangotornado=0.1
-    tornado=2.0
+    Django=1.5.4
+    tornado=3.1.1
+    rjdj.djangotornado=0.3.3
 
-    [instance]
+    [manage]
     recipe = zc.recipe.egg:script
-    eggs = rjdj.camp
-    scripts = instance
-    extra-paths = ${tornado:location}
+    scripts = manage
     arguments = settings
     initialization = from my.project import settings
 
@@ -62,7 +55,7 @@ Example configuration with Buildout
           author_email = '',
           description = 'My Django Project with Tornado',
           url = '',
-    	  namespace_packages = [],
+          namespace_packages = [],
           packages = find_packages('src'),
           package_dir = {'':'src'},
           install_requires = ['Django',
@@ -70,13 +63,13 @@ Example configuration with Buildout
                               'rjdj.djangotornado',
                              ],
           entry_points = {
-              'console_scripts':['instance=django.core.management:execute_manager']
+              'console_scripts':['manage=django.core.management:execute_manager']
               },
           include_package_data = True,
           zip_safe = False,
-          extras_require = dict(instance=[]),
+          extras_require = dict(manage=[]),
     )
 
-####GitHub Repository:
+### GitHub Repository:
 
     git://github.com/rjdj/django-tornado.git
