@@ -26,13 +26,18 @@ import os
 import sys
 
 import logging
-from optparse import make_option
+
+import django
 from django.conf import settings
+from django.core.handlers.wsgi import WSGIHandler
 from django.core.management.base import BaseCommand, CommandError
-from tornado.web import RequestHandler
+
+from tornado import wsgi, httpserver, ioloop
 from tornado.options import parse_command_line
+from tornado.web import Application, RequestHandler, FallbackHandler, URLSpec
+
+from rjdj.djangotornado import patches
 from rjdj.djangotornado.signals import tornado_exit
-from rjdj.djangotornado.utils import get_named_urlspecs
 from rjdj.djangotornado.shortcuts import set_application
 
 
@@ -41,7 +46,6 @@ logger = logging.getLogger()
 class WelcomeHandler(RequestHandler):
 
     def get(self):
-        import django
         self.set_header("Content-Type", "text/plain;charset=utf-8")
         self.write("Tornado Web Server with Django %s" % django.get_version())
         self.finish()
@@ -58,7 +62,7 @@ class Command(BaseCommand):
         """Handle command call"""
 
         if args:
-            raise CommandError('Usage is runserver %s' % self.args)
+            raise CommandError('Usage is runtornado %s' % self.args)
         if not addrport:
             self.addr = ''
             self.port = '8000'
@@ -71,48 +75,27 @@ class Command(BaseCommand):
             self.addr = '127.0.0.1'
 
         if not self.port.isdigit():
-            raise CommandError("%r is not a valid port number." % port)
+            raise CommandError("%s is not a valid port number." % port)
 
         self.quit_command = (sys.platform == 'win32') and 'CTRL-BREAK' or 'CONTROL-C'
         self.inner_run()
 
-    def admin_media(self):
-        """Return path and url of development admin media"""
-        import django.contrib.admin as admin_media
-        path = os.path.join(admin_media.__path__[0],'media')
-        url = hasattr(settings,"ADMIN_MEDIA_PREFIX") and \
-              settings.ADMIN_MEDIA_PREFIX or "/admin-media/"
-        return (path, url,)
-
     def get_handler(self, *args, **kwargs):
         """Return Tornado application with Django WSGI handlers"""
-        from django.core.handlers.wsgi import WSGIHandler
-        from tornado import wsgi
-        from tornado.web import FallbackHandler, StaticFileHandler
 
         # Patch prepare method from Tornado's FallbackHandler
-        from rjdj.djangotornado import patches
         FallbackHandler.prepare = patches.patch_prepare(FallbackHandler.prepare)
 
         django_app = wsgi.WSGIContainer(WSGIHandler())
-        handlers = []
-        try:
-            urls =  __import__(settings.ROOT_URLCONF,
-                               fromlist=[settings.ROOT_URLCONF])
-
-            if hasattr(urls,"tornado_urls"):
-                handlers = get_named_urlspecs(urls.tornado_urls)
-
-        except ImportError:
-            logger.warn("No Tornado URL specified.")
-
-        admin_media_path, admin_media_url = self.admin_media()
-        handlers += (
-            (r'/_', WelcomeHandler),
-            (r'%s(.*)' % admin_media_url, StaticFileHandler, {"path": admin_media_path}),
-            (r'.*', FallbackHandler, dict(fallback=django_app)),
-            )
-        return patches.DjangoApplication(handlers, **{"debug": settings.DEBUG})
+        handlers = (
+            URLSpec(r'/_', WelcomeHandler),
+            URLSpec(r'.*', FallbackHandler, dict(fallback=django_app)),
+        )
+        opts = {
+            "debug": settings.DEBUG,
+            "loglevel": settings.DEBUG and "debug" or "warn",
+        }
+        return Application(handlers, **opts)
 
     def run(self, *args, **options):
         """Run application either with or without autoreload"""
@@ -120,12 +103,8 @@ class Command(BaseCommand):
 
     def inner_run(self):
         """Get handler and start IOLoop"""
-        import django
-        from tornado import httpserver, ioloop
-
         parse_command_line()
-
-        print "Validating models..."
+        logger.info("Validating models...")
         self.validate(display_num_errors=True)
         logger.info("\nDjango version %(version)s, using settings %(settings)r\n"
                    "Server is running at http://%(addr)s:%(port)s/\n"

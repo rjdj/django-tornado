@@ -29,7 +29,7 @@ from tornado import escape
 from tornado.web import Application, URLSpec
 
 def patch_prepare(func):
-    """Patches the Cookie header in the Tornado request to fulfull
+    """Patches the Cookie header in the Tornado request to fulfill
     Django's strict string-type cookie policy"""
     def inner_func(self,**kwargs):
         if u'Cookie' in self.request.headers:
@@ -45,7 +45,7 @@ def patch_prepare(func):
 
 
 class DjangoApplication(Application):
-    
+
     def add_handlers(self, host_pattern, host_handlers):
         """Appends the given handlers to our handler list.
 
